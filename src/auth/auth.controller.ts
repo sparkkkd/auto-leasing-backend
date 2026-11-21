@@ -10,11 +10,11 @@ import {
 import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-// import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { CurrentUser } from './decorators/current-user.decorator';
-import { Public } from './decorators/public.decorator';
 import { User } from '@prisma/client';
 import type { CookieRequest } from 'src/common/types';
+import { CurrentUser, Public } from './decorators';
+
+// import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
