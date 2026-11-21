@@ -1,0 +1,225 @@
+{
+	"info": {
+		"name": "Auto Leasing API",
+		"description": "API для системы лизинга автомобилей",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "{{backendUrl}}",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    pm.environment.set('accessToken', response.accessToken);",
+									"    console.log('✅ Access token saved');",
+									"    ",
+									"    pm.test('Status code is 200 or 201', function () {",
+									"        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"    });",
+									"    ",
+									"    pm.test('Response has accessToken', function () {",
+									"        pm.expect(response).to.have.property('accessToken');",
+									"        pm.expect(response.accessToken).to.be.a('string');",
+									"    });",
+									"    ",
+									"    pm.test('Response has user', function () {",
+									"        pm.expect(response).to.have.property('user');",
+									"        pm.expect(response.user).to.have.property('id');",
+									"        pm.expect(response.user).to.have.property('email');",
+									"        pm.expect(response.user).to.have.property('name');",
+									"        pm.expect(response.user).to.have.property('role');",
+									"    });",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Авторизация пользователя. Возвращает accessToken и устанавливает refreshToken в httpOnly cookie."
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    pm.environment.set('accessToken', response.accessToken);",
+									"    console.log('✅ Access token refreshed');",
+									"    ",
+									"    pm.test('Status code is 200 or 201', function () {",
+									"        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"    });",
+									"    ",
+									"    pm.test('Response has new accessToken', function () {",
+									"        pm.expect(response).to.have.property('accessToken');",
+									"        pm.expect(response.accessToken).to.be.a('string');",
+									"    });",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Обновление access токена по refresh токену из cookie."
+					}
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    pm.environment.set('accessToken', '');",
+									"    pm.environment.set('refreshToken', '');",
+									"    console.log('✅ Tokens cleared');",
+									"    ",
+									"    pm.test('Status code is 200 or 201', function () {",
+									"        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"    });",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Выход из системы. Очищает refresh token из БД и cookie."
+					}
+				},
+				{
+					"name": "Get Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test('Status code is 200', function () {",
+									"        pm.expect(pm.response.code).to.equal(200);",
+									"    });",
+									"    ",
+									"    pm.test('Response has user data', function () {",
+									"        pm.expect(response).to.have.property('id');",
+									"        pm.expect(response).to.have.property('email');",
+									"        pm.expect(response).to.have.property('name');",
+									"        pm.expect(response).to.have.property('role');",
+									"        pm.expect(response).to.have.property('createdAt');",
+									"    });",
+									"    ",
+									"    pm.test('Password is not in response', function () {",
+									"        pm.expect(response).to.not.have.property('password');",
+									"    });",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						},
+						"description": "Получение данных текущего авторизованного пользователя."
+					}
+				}
+			],
+			"description": "Endpoints для аутентификации и управления сессией"
+		}
+	]
+}

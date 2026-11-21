@@ -1,0 +1,93 @@
+import {
+  Controller,
+  Post,
+  Body,
+  // UseGuards,
+  Get,
+  Res,
+  Req,
+} from '@nestjs/common';
+import type { Response, Request } from 'express';
+import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+// import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { Public } from './decorators/public.decorator';
+import { User } from '@prisma/client';
+import type { CookieRequest } from 'src/common/types';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Public()
+  @Post('login')
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.login(loginDto);
+
+    response.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return {
+      user: result.user,
+      accessToken: result.accessToken,
+    };
+  }
+
+  @Public()
+  @Post('refresh')
+  async refreshTokens(
+    @Req() request: CookieRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refreshToken = request.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return response.status(401).json({ message: 'Refresh token не найден' });
+    }
+
+    const user = request.user as User;
+    const result = await this.authService.refreshTokens(user.id, refreshToken);
+
+    response.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return {
+      user: result.user,
+      accessToken: result.accessToken,
+    };
+  }
+
+  @Post('logout')
+  async logout(
+    @CurrentUser('id') userId: string,
+    @Req() request: CookieRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refreshToken = request.cookies?.refreshToken;
+
+    if (refreshToken) {
+      await this.authService.logout(userId, refreshToken);
+    }
+
+    response.clearCookie('refreshToken');
+
+    return { message: 'Выход выполнен успешно' };
+  }
+
+  @Get('me')
+  async getMe(@CurrentUser('id') userId: string) {
+    return this.authService.getMe(userId);
+  }
+}
