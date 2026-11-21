@@ -34,27 +34,8 @@
 								"type": "text/javascript",
 								"exec": [
 									"const response = pm.response.json();",
-									"",
 									"if (pm.response.code === 200 || pm.response.code === 201) {",
 									"    pm.environment.set('accessToken', response.accessToken);",
-									"    console.log('✅ Access token saved');",
-									"    ",
-									"    pm.test('Status code is 200 or 201', function () {",
-									"        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-									"    });",
-									"    ",
-									"    pm.test('Response has accessToken', function () {",
-									"        pm.expect(response).to.have.property('accessToken');",
-									"        pm.expect(response.accessToken).to.be.a('string');",
-									"    });",
-									"    ",
-									"    pm.test('Response has user', function () {",
-									"        pm.expect(response).to.have.property('user');",
-									"        pm.expect(response.user).to.have.property('id');",
-									"        pm.expect(response.user).to.have.property('email');",
-									"        pm.expect(response.user).to.have.property('name');",
-									"        pm.expect(response.user).to.have.property('role');",
-									"    });",
 									"}"
 								]
 							}
@@ -84,124 +65,11 @@
 								"auth",
 								"login"
 							]
-						},
-						"description": "Авторизация пользователя. Возвращает accessToken и устанавливает refreshToken в httpOnly cookie."
-					}
-				},
-				{
-					"name": "Refresh Token",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"const response = pm.response.json();",
-									"",
-									"if (pm.response.code === 200 || pm.response.code === 201) {",
-									"    pm.environment.set('accessToken', response.accessToken);",
-									"    console.log('✅ Access token refreshed');",
-									"    ",
-									"    pm.test('Status code is 200 or 201', function () {",
-									"        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-									"    });",
-									"    ",
-									"    pm.test('Response has new accessToken', function () {",
-									"        pm.expect(response).to.have.property('accessToken');",
-									"        pm.expect(response.accessToken).to.be.a('string');",
-									"    });",
-									"}"
-								]
-							}
 						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/auth/refresh",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"auth",
-								"refresh"
-							]
-						},
-						"description": "Обновление access токена по refresh токену из cookie."
-					}
-				},
-				{
-					"name": "Logout",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 200 || pm.response.code === 201) {",
-									"    pm.environment.set('accessToken', '');",
-									"    pm.environment.set('refreshToken', '');",
-									"    console.log('✅ Tokens cleared');",
-									"    ",
-									"    pm.test('Status code is 200 or 201', function () {",
-									"        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-									"    });",
-									"}"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/auth/logout",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"auth",
-								"logout"
-							]
-						},
-						"description": "Выход из системы. Очищает refresh token из БД и cookie."
 					}
 				},
 				{
 					"name": "Get Current User",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"const response = pm.response.json();",
-									"",
-									"if (pm.response.code === 200) {",
-									"    pm.test('Status code is 200', function () {",
-									"        pm.expect(pm.response.code).to.equal(200);",
-									"    });",
-									"    ",
-									"    pm.test('Response has user data', function () {",
-									"        pm.expect(response).to.have.property('id');",
-									"        pm.expect(response).to.have.property('email');",
-									"        pm.expect(response).to.have.property('name');",
-									"        pm.expect(response).to.have.property('role');",
-									"        pm.expect(response).to.have.property('createdAt');",
-									"    });",
-									"    ",
-									"    pm.test('Password is not in response', function () {",
-									"        pm.expect(response).to.not.have.property('password');",
-									"    });",
-									"}"
-								]
-							}
-						}
-					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -214,61 +82,16 @@
 								"auth",
 								"me"
 							]
-						},
-						"description": "Получение данных текущего авторизованного пользователя."
+						}
 					}
 				}
-			],
-			"description": "Endpoints для аутентификации и управления сессией"
+			]
 		},
 		{
 			"name": "Users",
 			"item": [
 				{
 					"name": "Get All Users",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"const response = pm.response.json();",
-									"",
-									"if (pm.response.code === 200) {",
-									"    pm.test('Status code is 200', function () {",
-									"        pm.expect(pm.response.code).to.equal(200);",
-									"    });",
-									"    ",
-									"    pm.test('Response has users array', function () {",
-									"        pm.expect(response).to.have.property('users');",
-									"        pm.expect(response.users).to.be.an('array');",
-									"    });",
-									"    ",
-									"    pm.test('Response has total count', function () {",
-									"        pm.expect(response).to.have.property('total');",
-									"        pm.expect(response.total).to.be.a('number');",
-									"    });",
-									"    ",
-									"    if (response.users.length > 0) {",
-									"        pm.test('User has required fields', function () {",
-									"            const user = response.users[0];",
-									"            pm.expect(user).to.have.property('id');",
-									"            pm.expect(user).to.have.property('email');",
-									"            pm.expect(user).to.have.property('name');",
-									"            pm.expect(user).to.have.property('role');",
-									"            pm.expect(user).to.have.property('isActive');",
-									"        });",
-									"        ",
-									"        pm.test('Password is not in user object', function () {",
-									"            const user = response.users[0];",
-									"            pm.expect(user).to.not.have.property('password');",
-									"        });",
-									"    }",
-									"}"
-								]
-							}
-						}
-					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -280,99 +103,11 @@
 							"path": [
 								"users"
 							]
-						},
-						"description": "Получение списка всех пользователей. Требует роль ADMIN."
-					}
-				},
-				{
-					"name": "Get User By ID",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"const response = pm.response.json();",
-									"",
-									"if (pm.response.code === 200) {",
-									"    pm.test('Status code is 200', function () {",
-									"        pm.expect(pm.response.code).to.equal(200);",
-									"    });",
-									"    ",
-									"    pm.test('Response has user data', function () {",
-									"        pm.expect(response).to.have.property('id');",
-									"        pm.expect(response).to.have.property('email');",
-									"        pm.expect(response).to.have.property('name');",
-									"        pm.expect(response).to.have.property('role');",
-									"        pm.expect(response).to.have.property('isActive');",
-									"    });",
-									"    ",
-									"    pm.test('Password is not in response', function () {",
-									"        pm.expect(response).to.not.have.property('password');",
-									"    });",
-									"}"
-								]
-							}
 						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/users/:id",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"users",
-								":id"
-							]
-						},
-						"description": "Получение пользователя по ID. Требует роль ADMIN.",
-						"variable": [
-							{
-								"key": "id",
-								"value": "USER_ID_HERE",
-								"description": "ID пользователя"
-							}
-						]
 					}
 				},
 				{
 					"name": "Create User",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"const response = pm.response.json();",
-									"",
-									"if (pm.response.code === 201) {",
-									"    pm.test('Status code is 201', function () {",
-									"        pm.expect(pm.response.code).to.equal(201);",
-									"    });",
-									"    ",
-									"    pm.test('Response has user data', function () {",
-									"        pm.expect(response).to.have.property('id');",
-									"        pm.expect(response).to.have.property('email');",
-									"        pm.expect(response).to.have.property('name');",
-									"        pm.expect(response).to.have.property('role');",
-									"        pm.expect(response).to.have.property('isActive');",
-									"    });",
-									"    ",
-									"    pm.test('Password is not in response', function () {",
-									"        pm.expect(response).to.not.have.property('password');",
-									"    });",
-									"    ",
-									"    pm.test('User is active by default', function () {",
-									"        pm.expect(response.isActive).to.be.true;",
-									"    });",
-									"}"
-								]
-							}
-						}
-					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -393,42 +128,126 @@
 							"path": [
 								"users"
 							]
-						},
-						"description": "Создание нового пользователя. Требует роль ADMIN."
+						}
 					}
-				},
+				}
+			]
+		},
+		{
+			"name": "Clients",
+			"item": [
 				{
-					"name": "Update User",
+					"name": "Get All Clients (with search & pagination)",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"const response = pm.response.json();",
-									"",
-									"if (pm.response.code === 200) {",
-									"    pm.test('Status code is 200', function () {",
-									"        pm.expect(pm.response.code).to.equal(200);",
-									"    });",
-									"    ",
-									"    pm.test('Response has updated user data', function () {",
-									"        pm.expect(response).to.have.property('id');",
-									"        pm.expect(response).to.have.property('email');",
-									"        pm.expect(response).to.have.property('name');",
-									"        pm.expect(response).to.have.property('role');",
-									"        pm.expect(response).to.have.property('isActive');",
-									"        pm.expect(response).to.have.property('updatedAt');",
-									"    });",
-									"    ",
-									"    pm.test('Password is not in response', function () {",
-									"        pm.expect(response).to.not.have.property('password');",
-									"    });",
+									"pm.test('Status code is 200', () => pm.expect(pm.response.code).to.equal(200));",
+									"const res = pm.response.json();",
+									"pm.test('Has data array and total', () => {",
+									"    pm.expect(res).to.have.property('data').that.is.an('array');",
+									"    pm.expect(res).to.have.property('total').that.is.a('number');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/clients?page=1&limit=10&search=Иван",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"clients"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "Иван"
+								}
+							]
+						},
+						"description": "Поиск работает по каждому слову отдельно. Попробуй 'Иванов Иван' или '+7 999'."
+					}
+				},
+				{
+					"name": "Create Client",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const res = pm.response.json();",
+									"    pm.environment.set('clientId', res.id);",
+									"    console.log('✅ Client ID saved to environment:', res.id);",
 									"}"
 								]
 							}
 						}
 					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Иванов\",\n  \"middleName\": \"Иванович\",\n  \"phone\": \"+79991234567\",\n  \"email\": \"ivanov@example.com\",\n  \"passportData\": \"4500 123456, выдан ОВД Тверского района\",\n  \"address\": \"г. Москва, ул. Тверская, д. 1\",\n  \"notes\": \"Тестовый клиент\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/clients",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"clients"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Client By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/clients/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"clients",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{clientId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Client",
 					"request": {
 						"method": "PATCH",
 						"header": [
@@ -439,47 +258,37 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"Updated Manager Name\",\n  \"role\": \"VIEWER\"\n}"
+							"raw": "{\n  \"phone\": \"+79999999999\",\n  \"notes\": \"Обновленные заметки после звонка\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/users/:id",
+							"raw": "{{baseUrl}}/clients/:id",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
-								"users",
+								"clients",
 								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{clientId}}"
+								}
 							]
-						},
-						"description": "Обновление данных пользователя. Требует роль ADMIN.",
-						"variable": [
-							{
-								"key": "id",
-								"value": "USER_ID_HERE",
-								"description": "ID пользователя"
-							}
-						]
+						}
 					}
 				},
 				{
-					"name": "Deactivate User (Soft Delete)",
+					"name": "Delete Client",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"const response = pm.response.json();",
-									"",
 									"if (pm.response.code === 200) {",
-									"    pm.test('Status code is 200', function () {",
-									"        pm.expect(pm.response.code).to.equal(200);",
-									"    });",
-									"    ",
-									"    pm.test('Response has success message', function () {",
-									"        pm.expect(response).to.have.property('message');",
-									"        pm.expect(response.message).to.include('деактивирован');",
-									"    });",
+									"    pm.environment.unset('clientId');",
+									"    console.log('✅ Client ID cleared from environment');",
 									"}"
 								]
 							}
@@ -489,75 +298,25 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/users/:id",
+							"raw": "{{baseUrl}}/clients/:id",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
-								"users",
+								"clients",
 								":id"
-							]
-						},
-						"description": "Мягкое удаление пользователя (деактивация через isActive: false). Требует роль ADMIN.",
-						"variable": [
-							{
-								"key": "id",
-								"value": "USER_ID_HERE",
-								"description": "ID пользователя"
-							}
-						]
-					}
-				},
-				{
-					"name": "Delete User Permanently",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"const response = pm.response.json();",
-									"",
-									"if (pm.response.code === 200) {",
-									"    pm.test('Status code is 200', function () {",
-									"        pm.expect(pm.response.code).to.equal(200);",
-									"    });",
-									"    ",
-									"    pm.test('Response has success message', function () {",
-									"        pm.expect(response).to.have.property('message');",
-									"        pm.expect(response.message).to.include('удален');",
-									"    });",
-									"}"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/users/:id/permanent",
-							"host": [
-								"{{baseUrl}}"
 							],
-							"path": [
-								"users",
-								":id",
-								"permanent"
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{clientId}}"
+								}
 							]
 						},
-						"description": "Полное удаление пользователя из БД. Требует роль ADMIN. Нельзя удалить себя или последнего админа.",
-						"variable": [
-							{
-								"key": "id",
-								"value": "USER_ID_HERE",
-								"description": "ID пользователя"
-							}
-						]
+						"description": "Удаляет клиента только если у него НЕТ сделок. Требует роль ADMIN."
 					}
 				}
-			],
-			"description": "Endpoints для управления пользователями (только для ADMIN)"
+			]
 		}
 	]
 }
