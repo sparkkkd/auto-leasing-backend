@@ -179,8 +179,7 @@
 									"value": "Иван"
 								}
 							]
-						},
-						"description": "Поиск работает по каждому слову отдельно. Попробуй 'Иванов Иван' или '+7 999'."
+						}
 					}
 				},
 				{
@@ -194,7 +193,6 @@
 									"if (pm.response.code === 201) {",
 									"    const res = pm.response.json();",
 									"    pm.environment.set('clientId', res.id);",
-									"    console.log('✅ Client ID saved to environment:', res.id);",
 									"}"
 								]
 							}
@@ -258,7 +256,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+79999999999\",\n  \"notes\": \"Обновленные заметки после звонка\"\n}"
+							"raw": "{\n  \"phone\": \"+79999999999\",\n  \"notes\": \"Обновленные заметки\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/clients/:id",
@@ -288,7 +286,6 @@
 								"exec": [
 									"if (pm.response.code === 200) {",
 									"    pm.environment.unset('clientId');",
-									"    console.log('✅ Client ID cleared from environment');",
 									"}"
 								]
 							}
@@ -312,8 +309,458 @@
 									"value": "{{clientId}}"
 								}
 							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Investors",
+			"item": [
+				{
+					"name": "Get All Investors (with search, type filter & pagination)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', () => pm.expect(pm.response.code).to.equal(200));",
+									"const res = pm.response.json();",
+									"pm.test('Has data array and total', () => {",
+									"    pm.expect(res).to.have.property('data').that.is.an('array');",
+									"    pm.expect(res).to.have.property('total').that.is.a('number');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/investors?page=1&limit=10&search=Финанс&type=COMPANY",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"investors"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "Финанс"
+								},
+								{
+									"key": "type",
+									"value": "COMPANY"
+								}
+							]
 						},
-						"description": "Удаляет клиента только если у него НЕТ сделок. Требует роль ADMIN."
+						"description": "Поиск работает по каждому слову отдельно. Фильтр по типу: INDIVIDUAL, COMPANY, BANK."
+					}
+				},
+				{
+					"name": "Create Investor (COMPANY)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const res = pm.response.json();",
+									"    pm.environment.set('investorId', res.id);",
+									"    console.log('✅ Investor ID saved:', res.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"ООО Финанс\",\n  \"type\": \"COMPANY\",\n  \"contactPerson\": \"Петров Петр\",\n  \"phone\": \"+79998887766\",\n  \"email\": \"info@finans.ru\",\n  \"bankDetails\": \"Сбербанк, р/с 40702810000000000000\",\n  \"notes\": \"Основной инвестор\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/investors",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"investors"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Investor (BANK)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"ПАО Сбербанк\",\n  \"type\": \"BANK\",\n  \"contactPerson\": \"Отдел кредитования\",\n  \"phone\": \"+78005553535\",\n  \"email\": \"credit@sberbank.ru\",\n  \"bankDetails\": \"Генеральная лицензия ЦБ РФ №1481\",\n  \"notes\": \"Партнер по кредитованию\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/investors",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"investors"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Investor (INDIVIDUAL)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Сидоров Алексей\",\n  \"type\": \"INDIVIDUAL\",\n  \"phone\": \"+79991112233\",\n  \"email\": \"sidorov@mail.ru\",\n  \"notes\": \"Частный инвестор\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/investors",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"investors"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Investor By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/investors/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"investors",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{investorId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Investor",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+79990001122\",\n  \"notes\": \"Обновленные данные инвестора\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/investors/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"investors",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{investorId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Investor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.environment.unset('investorId');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/investors/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"investors",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{investorId}}"
+								}
+							]
+						},
+						"description": "Удаляет инвестора только если у него НЕТ сделок. Требует роль ADMIN."
+					}
+				}
+			]
+		},
+		{
+			"name": "Cars",
+			"item": [
+				{
+					"name": "Get All Cars (with search, status filter & pagination)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', () => pm.expect(pm.response.code).to.equal(200));",
+									"const res = pm.response.json();",
+									"pm.test('Has data array and total', () => {",
+									"    pm.expect(res).to.have.property('data').that.is.an('array');",
+									"    pm.expect(res).to.have.property('total').that.is.a('number');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cars?page=1&limit=10&search=Toyota&status=IN_STOCK",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cars"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "Toyota"
+								},
+								{
+									"key": "status",
+									"value": "IN_STOCK"
+								}
+							]
+						},
+						"description": "Поиск работает по каждому слову отдельно. Фильтр по статусу: IN_STOCK, IN_WORK, RESERVED, SOLD, REPAIR."
+					}
+				},
+				{
+					"name": "Create Car",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const res = pm.response.json();",
+									"    pm.environment.set('carId', res.id);",
+									"    console.log('✅ Car ID saved:', res.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"year\": 2024,\n  \"vin\": \"JTDBF123456789012\",\n  \"licensePlate\": \"А123БВ777\",\n  \"color\": \"Белый\",\n  \"status\": \"IN_STOCK\",\n  \"purchasePrice\": 2500000,\n  \"sellingPrice\": 2800000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cars",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cars"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Car (without license plate)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"make\": \"BMW\",\n  \"model\": \"X5\",\n  \"year\": 2023,\n  \"vin\": \"5UXCR6C05N9K12345\",\n  \"color\": \"Черный\",\n  \"purchasePrice\": 6500000,\n  \"sellingPrice\": 7200000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cars",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cars"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Car By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cars/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cars",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{carId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Car",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"RESERVED\",\n  \"color\": \"Серый металлик\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cars/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cars",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{carId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Car",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.environment.unset('carId');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cars/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cars",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{carId}}"
+								}
+							]
+						},
+						"description": "Удаляет машину только если у нее НЕТ активной сделки. Требует роль ADMIN."
 					}
 				}
 			]

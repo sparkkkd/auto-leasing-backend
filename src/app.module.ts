@@ -7,6 +7,8 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards';
 import { UserModule } from './user/user.module';
 import { ClientsModule } from './clients/clients.module';
+import { InvestorsModule } from './investors/investors.module';
+import { CarsModule } from './cars/cars.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { ClientsModule } from './clients/clients.module';
     AuthModule,
     UserModule,
     ClientsModule,
+    InvestorsModule,
+    CarsModule,
   ],
   controllers: [],
   providers: [
