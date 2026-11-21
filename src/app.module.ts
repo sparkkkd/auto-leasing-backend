@@ -9,6 +9,7 @@ import { UserModule } from './user/user.module';
 import { ClientsModule } from './clients/clients.module';
 import { InvestorsModule } from './investors/investors.module';
 import { CarsModule } from './cars/cars.module';
+import { DealsModule } from './deals/deals.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { CarsModule } from './cars/cars.module';
     ClientsModule,
     InvestorsModule,
     CarsModule,
+    DealsModule,
   ],
   controllers: [],
   providers: [

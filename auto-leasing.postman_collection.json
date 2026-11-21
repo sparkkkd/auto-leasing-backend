@@ -137,23 +137,7 @@
 			"name": "Clients",
 			"item": [
 				{
-					"name": "Get All Clients (with search & pagination)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"pm.test('Status code is 200', () => pm.expect(pm.response.code).to.equal(200));",
-									"const res = pm.response.json();",
-									"pm.test('Has data array and total', () => {",
-									"    pm.expect(res).to.have.property('data').that.is.an('array');",
-									"    pm.expect(res).to.have.property('total').that.is.a('number');",
-									"});"
-								]
-							}
-						}
-					],
+					"name": "Get All Clients",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -191,8 +175,7 @@
 								"type": "text/javascript",
 								"exec": [
 									"if (pm.response.code === 201) {",
-									"    const res = pm.response.json();",
-									"    pm.environment.set('clientId', res.id);",
+									"    pm.environment.set('clientId', pm.response.json().id);",
 									"}"
 								]
 							}
@@ -256,7 +239,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+79999999999\",\n  \"notes\": \"Обновленные заметки\"\n}"
+							"raw": "{\n  \"phone\": \"+79999999999\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/clients/:id",
@@ -284,9 +267,7 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"if (pm.response.code === 200) {",
-									"    pm.environment.unset('clientId');",
-									"}"
+									"if (pm.response.code === 200) pm.environment.unset('clientId');"
 								]
 							}
 						}
@@ -318,28 +299,12 @@
 			"name": "Investors",
 			"item": [
 				{
-					"name": "Get All Investors (with search, type filter & pagination)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"pm.test('Status code is 200', () => pm.expect(pm.response.code).to.equal(200));",
-									"const res = pm.response.json();",
-									"pm.test('Has data array and total', () => {",
-									"    pm.expect(res).to.have.property('data').that.is.an('array');",
-									"    pm.expect(res).to.have.property('total').that.is.a('number');",
-									"});"
-								]
-							}
-						}
-					],
+					"name": "Get All Investors",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/investors?page=1&limit=10&search=Финанс&type=COMPANY",
+							"raw": "{{baseUrl}}/investors?page=1&limit=10",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -354,22 +319,13 @@
 								{
 									"key": "limit",
 									"value": "10"
-								},
-								{
-									"key": "search",
-									"value": "Финанс"
-								},
-								{
-									"key": "type",
-									"value": "COMPANY"
 								}
 							]
-						},
-						"description": "Поиск работает по каждому слову отдельно. Фильтр по типу: INDIVIDUAL, COMPANY, BANK."
+						}
 					}
 				},
 				{
-					"name": "Create Investor (COMPANY)",
+					"name": "Create Investor",
 					"event": [
 						{
 							"listen": "test",
@@ -377,9 +333,7 @@
 								"type": "text/javascript",
 								"exec": [
 									"if (pm.response.code === 201) {",
-									"    const res = pm.response.json();",
-									"    pm.environment.set('investorId', res.id);",
-									"    console.log('✅ Investor ID saved:', res.id);",
+									"    pm.environment.set('investorId', pm.response.json().id);",
 									"}"
 								]
 							}
@@ -396,56 +350,6 @@
 						"body": {
 							"mode": "raw",
 							"raw": "{\n  \"name\": \"ООО Финанс\",\n  \"type\": \"COMPANY\",\n  \"contactPerson\": \"Петров Петр\",\n  \"phone\": \"+79998887766\",\n  \"email\": \"info@finans.ru\",\n  \"bankDetails\": \"Сбербанк, р/с 40702810000000000000\",\n  \"notes\": \"Основной инвестор\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/investors",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"investors"
-							]
-						}
-					}
-				},
-				{
-					"name": "Create Investor (BANK)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"ПАО Сбербанк\",\n  \"type\": \"BANK\",\n  \"contactPerson\": \"Отдел кредитования\",\n  \"phone\": \"+78005553535\",\n  \"email\": \"credit@sberbank.ru\",\n  \"bankDetails\": \"Генеральная лицензия ЦБ РФ №1481\",\n  \"notes\": \"Партнер по кредитованию\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/investors",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"investors"
-							]
-						}
-					}
-				},
-				{
-					"name": "Create Investor (INDIVIDUAL)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"Сидоров Алексей\",\n  \"type\": \"INDIVIDUAL\",\n  \"phone\": \"+79991112233\",\n  \"email\": \"sidorov@mail.ru\",\n  \"notes\": \"Частный инвестор\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/investors",
@@ -493,7 +397,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+79990001122\",\n  \"notes\": \"Обновленные данные инвестора\"\n}"
+							"raw": "{\n  \"phone\": \"+79990001122\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/investors/:id",
@@ -521,9 +425,7 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"if (pm.response.code === 200) {",
-									"    pm.environment.unset('investorId');",
-									"}"
+									"if (pm.response.code === 200) pm.environment.unset('investorId');"
 								]
 							}
 						}
@@ -546,8 +448,7 @@
 									"value": "{{investorId}}"
 								}
 							]
-						},
-						"description": "Удаляет инвестора только если у него НЕТ сделок. Требует роль ADMIN."
+						}
 					}
 				}
 			]
@@ -556,28 +457,12 @@
 			"name": "Cars",
 			"item": [
 				{
-					"name": "Get All Cars (with search, status filter & pagination)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"pm.test('Status code is 200', () => pm.expect(pm.response.code).to.equal(200));",
-									"const res = pm.response.json();",
-									"pm.test('Has data array and total', () => {",
-									"    pm.expect(res).to.have.property('data').that.is.an('array');",
-									"    pm.expect(res).to.have.property('total').that.is.a('number');",
-									"});"
-								]
-							}
-						}
-					],
+					"name": "Get All Cars",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/cars?page=1&limit=10&search=Toyota&status=IN_STOCK",
+							"raw": "{{baseUrl}}/cars?page=1&limit=10&status=IN_STOCK",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -594,16 +479,11 @@
 									"value": "10"
 								},
 								{
-									"key": "search",
-									"value": "Toyota"
-								},
-								{
 									"key": "status",
 									"value": "IN_STOCK"
 								}
 							]
-						},
-						"description": "Поиск работает по каждому слову отдельно. Фильтр по статусу: IN_STOCK, IN_WORK, RESERVED, SOLD, REPAIR."
+						}
 					}
 				},
 				{
@@ -615,9 +495,7 @@
 								"type": "text/javascript",
 								"exec": [
 									"if (pm.response.code === 201) {",
-									"    const res = pm.response.json();",
-									"    pm.environment.set('carId', res.id);",
-									"    console.log('✅ Car ID saved:', res.id);",
+									"    pm.environment.set('carId', pm.response.json().id);",
 									"}"
 								]
 							}
@@ -634,31 +512,6 @@
 						"body": {
 							"mode": "raw",
 							"raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"year\": 2024,\n  \"vin\": \"JTDBF123456789012\",\n  \"licensePlate\": \"А123БВ777\",\n  \"color\": \"Белый\",\n  \"status\": \"IN_STOCK\",\n  \"purchasePrice\": 2500000,\n  \"sellingPrice\": 2800000\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/cars",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"cars"
-							]
-						}
-					}
-				},
-				{
-					"name": "Create Car (without license plate)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"make\": \"BMW\",\n  \"model\": \"X5\",\n  \"year\": 2023,\n  \"vin\": \"5UXCR6C05N9K12345\",\n  \"color\": \"Черный\",\n  \"purchasePrice\": 6500000,\n  \"sellingPrice\": 7200000\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/cars",
@@ -706,7 +559,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"status\": \"RESERVED\",\n  \"color\": \"Серый металлик\"\n}"
+							"raw": "{\n  \"status\": \"RESERVED\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/cars/:id",
@@ -734,9 +587,7 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"if (pm.response.code === 200) {",
-									"    pm.environment.unset('carId');",
-									"}"
+									"if (pm.response.code === 200) pm.environment.unset('carId');"
 								]
 							}
 						}
@@ -759,8 +610,258 @@
 									"value": "{{carId}}"
 								}
 							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Deals",
+			"item": [
+				{
+					"name": "Get All Deals (with filters)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', () => pm.expect(pm.response.code).to.equal(200));",
+									"const res = pm.response.json();",
+									"pm.test('Has data array and total', () => {",
+									"    pm.expect(res).to.have.property('data').that.is.an('array');",
+									"    pm.expect(res).to.have.property('total').that.is.a('number');",
+									"});",
+									"pm.test('Deals include related entities', () => {",
+									"    if (res.data.length > 0) {",
+									"        const deal = res.data[0];",
+									"        pm.expect(deal).to.have.property('client');",
+									"        pm.expect(deal).to.have.property('investor');",
+									"        pm.expect(deal).to.have.property('car');",
+									"    }",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/deals?page=1&limit=10&status=ACTIVE",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"deals"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": "ACTIVE"
+								}
+							]
 						},
-						"description": "Удаляет машину только если у нее НЕТ активной сделки. Требует роль ADMIN."
+						"description": "Фильтры: search, clientId, investorId, status. Поиск работает по номеру договора, клиенту, инвестору, машине."
+					}
+				},
+				{
+					"name": "Create Deal",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const res = pm.response.json();",
+									"    pm.environment.set('dealId', res.id);",
+									"    console.log('✅ Deal ID saved:', res.id);",
+									"    console.log('💡 Car status should be IN_WORK now');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"clientId\": \"{{clientId}}\",\n  \"carId\": \"{{carId}}\",\n  \"investorId\": \"{{investorId}}\",\n  \"contractNumber\": \"LEASE-2026-000001\",\n  \"startDate\": \"2026-11-22T00:00:00.000Z\",\n  \"endDate\": \"2028-11-22T00:00:00.000Z\",\n  \"clientTotalAmount\": 2800000,\n  \"investorTotalAmount\": 2500000,\n  \"status\": \"ACTIVE\",\n  \"notes\": \"Лизинг Toyota Camry на 2 года\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/deals",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"deals"
+							]
+						},
+						"description": "Создает сделку и автоматически меняет статус машины на IN_WORK. Требует существующих clientId, carId, investorId. Номер договора должен быть уникальным."
+					}
+				},
+				{
+					"name": "Get Deal By ID (with balance calculation)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const res = pm.response.json();",
+									"    pm.test('Has balance fields', () => {",
+									"        pm.expect(res).to.have.property('clientRemaining');",
+									"        pm.expect(res).to.have.property('investorRemaining');",
+									"        pm.expect(res).to.have.property('clientPaid');",
+									"        pm.expect(res).to.have.property('investorPaid');",
+									"    });",
+									"    console.log('💰 Client remaining:', res.clientRemaining);",
+									"    console.log('💸 Investor remaining:', res.investorRemaining);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/deals/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"deals",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{dealId}}"
+								}
+							]
+						},
+						"description": "Возвращает детали сделки с расчетом остатков: clientRemaining, investorRemaining, clientPaid, investorPaid."
+					}
+				},
+				{
+					"name": "Update Deal (change notes)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"notes\": \"Обновленные заметки по сделке\",\n  \"clientTotalAmount\": 2900000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/deals/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"deals",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{dealId}}"
+								}
+							]
+						},
+						"description": "Можно менять: contractNumber, startDate, endDate, clientTotalAmount, investorTotalAmount, status, notes. НЕЛЬЗЯ менять: clientId, carId, investorId."
+					}
+				},
+				{
+					"name": "Cancel Deal (returns car to IN_STOCK)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"CANCELLED\",\n  \"notes\": \"Сделка отменена — клиент передумал\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/deals/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"deals",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{dealId}}"
+								}
+							]
+						},
+						"description": "При смене статуса на CANCELLED машина автоматически возвращается в статус IN_STOCK."
+					}
+				},
+				{
+					"name": "Delete Deal (only if no payments)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.environment.unset('dealId');",
+									"    console.log('✅ Car status should be IN_STOCK now');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/deals/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"deals",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{dealId}}"
+								}
+							]
+						},
+						"description": "Удаляет сделку только если нет платежей. Машина возвращается в IN_STOCK. Если есть платежи — используйте отмену (CANCELLED) вместо удаления."
 					}
 				}
 			]
