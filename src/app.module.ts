@@ -11,6 +11,7 @@ import { InvestorsModule } from './investors/investors.module';
 import { CarsModule } from './cars/cars.module';
 import { DealsModule } from './deals/deals.module';
 import { PaymentsModule } from './payments/payments.module';
+import { DocumentsModule } from './documents/documents.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { PaymentsModule } from './payments/payments.module';
     CarsModule,
     DealsModule,
     PaymentsModule,
+    DocumentsModule,
   ],
   controllers: [],
   providers: [

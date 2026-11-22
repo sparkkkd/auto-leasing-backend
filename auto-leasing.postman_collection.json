@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Auto Leasing API",
-		"description": "API для системы лизинга автомобилей",
+		"description": "API для системы лизинга автомобилей. Все модули: Auth, Users, Clients, Investors, Cars, Deals, Payments, Documents.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -69,6 +69,40 @@
 					}
 				},
 				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const response = pm.response.json();",
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    pm.environment.set('accessToken', response.accessToken);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						}
+					}
+				},
+				{
 					"name": "Get Current User",
 					"request": {
 						"method": "GET",
@@ -81,6 +115,36 @@
 							"path": [
 								"auth",
 								"me"
+							]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    pm.environment.set('accessToken', '');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout"
 							]
 						}
 					}
@@ -142,7 +206,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/clients?page=1&limit=10",
+							"raw": "{{baseUrl}}/clients?page=1&limit=10&search=Иван",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -157,6 +221,10 @@
 								{
 									"key": "limit",
 									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "Иван"
 								}
 							]
 						}
@@ -300,7 +368,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/investors?page=1&limit=10",
+							"raw": "{{baseUrl}}/investors?page=1&limit=10&type=COMPANY",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -315,6 +383,10 @@
 								{
 									"key": "limit",
 									"value": "10"
+								},
+								{
+									"key": "type",
+									"value": "COMPANY"
 								}
 							]
 						}
@@ -458,7 +530,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/cars?page=1&limit=10",
+							"raw": "{{baseUrl}}/cars?page=1&limit=10&status=IN_STOCK",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -473,6 +545,10 @@
 								{
 									"key": "limit",
 									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": "IN_STOCK"
 								}
 							]
 						}
@@ -616,7 +692,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/deals?page=1&limit=10",
+							"raw": "{{baseUrl}}/deals?page=1&limit=10&status=ACTIVE",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -631,6 +707,10 @@
 								{
 									"key": "limit",
 									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": "ACTIVE"
 								}
 							]
 						}
@@ -769,28 +849,7 @@
 			"name": "Payments",
 			"item": [
 				{
-					"name": "Get All Payments (with filters)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"pm.test('Status code is 200', () => pm.expect(pm.response.code).to.equal(200));",
-									"const res = pm.response.json();",
-									"pm.test('Has data array and total', () => {",
-									"    pm.expect(res).to.have.property('data').that.is.an('array');",
-									"    pm.expect(res).to.have.property('total').that.is.a('number');",
-									"});",
-									"pm.test('Amount is number (not Decimal)', () => {",
-									"    if (res.data.length > 0) {",
-									"        pm.expect(typeof res.data[0].amount).to.equal('number');",
-									"    }",
-									"});"
-								]
-							}
-						}
-					],
+					"name": "Get All Payments",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -820,8 +879,7 @@
 									"value": "10"
 								}
 							]
-						},
-						"description": "Фильтры: dealId, direction (CLIENT_TO_COMPANY / COMPANY_TO_INVESTOR), dateFrom, dateTo. Суммы возвращаются как number, а не Decimal."
+						}
 					}
 				},
 				{
@@ -833,10 +891,7 @@
 								"type": "text/javascript",
 								"exec": [
 									"if (pm.response.code === 201) {",
-									"    const res = pm.response.json();",
-									"    pm.environment.set('paymentId', res.id);",
-									"    console.log('✅ Payment ID saved:', res.id);",
-									"    console.log('💰 Amount:', res.amount);",
+									"    pm.environment.set('paymentId', pm.response.json().id);",
 									"}"
 								]
 							}
@@ -862,71 +917,11 @@
 							"path": [
 								"payments"
 							]
-						},
-						"description": "Платеж от клиента компании. Проверяет существование сделки. Сумма должна быть > 0."
-					}
-				},
-				{
-					"name": "Create Payment (COMPANY_TO_INVESTOR)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 201) {",
-									"    pm.environment.set('paymentToInvestorId', pm.response.json().id);",
-									"}"
-								]
-							}
 						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"dealId\": \"{{dealId}}\",\n  \"direction\": \"COMPANY_TO_INVESTOR\",\n  \"amount\": 45000,\n  \"paidAt\": \"2026-11-22T00:00:00.000Z\",\n  \"comment\": \"Платеж инвестору за ноябрь\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/payments",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"payments"
-							]
-						},
-						"description": "Платеж компании инвестору. Создается второй платеж по той же сделке для демонстрации обоих направлений."
 					}
 				},
 				{
 					"name": "Get Payment By ID",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    const res = pm.response.json();",
-									"    pm.test('Has deal info', () => {",
-									"        pm.expect(res).to.have.property('deal');",
-									"        pm.expect(res.deal).to.have.property('contractNumber');",
-									"    });",
-									"    pm.test('Has documents array', () => {",
-									"        pm.expect(res).to.have.property('documents').that.is.an('array');",
-									"    });",
-									"}"
-								]
-							}
-						}
-					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -945,8 +940,7 @@
 									"value": "{{paymentId}}"
 								}
 							]
-						},
-						"description": "Возвращает детали платежа с информацией о сделке и списком прикрепленных документов."
+						}
 					}
 				},
 				{
@@ -978,8 +972,7 @@
 									"value": "{{paymentId}}"
 								}
 							]
-						},
-						"description": "Можно менять: direction, amount, paidAt, comment. Нельзя менять dealId (платеж привязан к сделке)."
+						}
 					}
 				},
 				{
@@ -990,9 +983,7 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"if (pm.response.code === 200) {",
-									"    pm.environment.unset('paymentId');",
-									"}"
+									"if (pm.response.code === 200) pm.environment.unset('paymentId');"
 								]
 							}
 						}
@@ -1015,35 +1006,228 @@
 									"value": "{{paymentId}}"
 								}
 							]
-						},
-						"description": "Удаляет платеж только если к нему не прикреплены документы. Если есть документы — вернется 400 Bad Request."
+						}
 					}
-				},
+				}
+			]
+		},
+		{
+			"name": "Documents",
+			"item": [
 				{
-					"name": "Get Payments by Date Range",
+					"name": "Get All Documents",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/payments?dateFrom=2026-11-01T00:00:00.000Z&dateTo=2026-11-30T23:59:59.000Z",
+							"raw": "{{baseUrl}}/documents?paymentId={{paymentId}}&type=PAYMENT_RECEIPT&page=1&limit=10",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
-								"payments"
+								"documents"
 							],
 							"query": [
 								{
-									"key": "dateFrom",
-									"value": "2026-11-01T00:00:00.000Z"
+									"key": "paymentId",
+									"value": "{{paymentId}}"
 								},
 								{
-									"key": "dateTo",
-									"value": "2026-11-30T23:59:59.000Z"
+									"key": "type",
+									"value": "PAYMENT_RECEIPT"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Upload Document (to payment)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.environment.set('documentId', pm.response.json().id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": ""
 								}
 							]
 						},
-						"description": "Поиск платежей в диапазоне дат. Полезно для отчетов за месяц/квартал/год."
+						"url": {
+							"raw": "{{baseUrl}}/documents/upload?paymentId={{paymentId}}&type=PAYMENT_RECEIPT",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents",
+								"upload"
+							],
+							"query": [
+								{
+									"key": "paymentId",
+									"value": "{{paymentId}}"
+								},
+								{
+									"key": "type",
+									"value": "PAYMENT_RECEIPT"
+								}
+							]
+						},
+						"description": "⚠️ В поле 'file' выбери тип File и укажи путь к PDF/JPG/PNG файлу. Максимум 10 MB."
+					}
+				},
+				{
+					"name": "Upload Document (to deal)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.environment.set('dealDocumentId', pm.response.json().id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": ""
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/documents/upload?dealId={{dealId}}&type=CONTRACT_SCAN",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents",
+								"upload"
+							],
+							"query": [
+								{
+									"key": "dealId",
+									"value": "{{dealId}}"
+								},
+								{
+									"key": "type",
+									"value": "CONTRACT_SCAN"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Document By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/documents/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{documentId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Download Document",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/documents/:id/download",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents",
+								":id",
+								"download"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{documentId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Document",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) pm.environment.unset('documentId');"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/documents/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{documentId}}"
+								}
+							]
+						}
 					}
 				}
 			]
