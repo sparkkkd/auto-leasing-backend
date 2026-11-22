@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { PrismaModule } from 'prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -12,6 +12,9 @@ import { CarsModule } from './cars/cars.module';
 import { DealsModule } from './deals/deals.module';
 import { PaymentsModule } from './payments/payments.module';
 import { DocumentsModule } from './documents/documents.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
+import { AuditLogService } from './audit-log/audit-log.service';
+import { AuditLogInterceptor } from './audit-log/interceptors';
 
 @Module({
   imports: [
@@ -27,12 +30,19 @@ import { DocumentsModule } from './documents/documents.module';
     DealsModule,
     PaymentsModule,
     DocumentsModule,
+    AuditLogModule,
   ],
   controllers: [],
   providers: [
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useFactory: (auditLogService: AuditLogService) =>
+        new AuditLogInterceptor(auditLogService),
+      inject: [AuditLogService],
     },
   ],
 })

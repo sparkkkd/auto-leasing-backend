@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Auto Leasing API",
-		"description": "API для системы лизинга автомобилей. Все модули: Auth, Users, Clients, Investors, Cars, Deals, Payments, Documents.",
+		"description": "API для системы лизинга автомобилей. Все модули: Auth, Users, Clients, Investors, Cars, Deals, Payments, Documents, AuditLog.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -1231,6 +1231,214 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "Audit Logs",
+			"item": [
+				{
+					"name": "Get All Audit Logs",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', () => pm.expect(pm.response.code).to.equal(200));",
+									"const res = pm.response.json();",
+									"pm.test('Has data array and total', () => {",
+									"    pm.expect(res).to.have.property('data').that.is.an('array');",
+									"    pm.expect(res).to.have.property('total').that.is.a('number');",
+									"});",
+									"pm.test('Logs have required fields', () => {",
+									"    if (res.data.length > 0) {",
+									"        const log = res.data[0];",
+									"        pm.expect(log).to.have.property('id');",
+									"        pm.expect(log).to.have.property('action');",
+									"        pm.expect(log).to.have.property('entityType');",
+									"        pm.expect(log).to.have.property('entityId');",
+									"        pm.expect(log).to.have.property('createdAt');",
+									"        pm.expect(log).to.have.property('user');",
+									"    }",
+									"});",
+									"console.log('📊 Total audit logs:', res.total);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs?page=1&limit=50",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Получение всех логов аудита. Требует роль ADMIN. Возвращает список с информацией о пользователе, действии, сущности и изменениях."
+					}
+				},
+				{
+					"name": "Get Audit Logs by User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs?userId={{currentUserId}}&page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "userId",
+									"value": "{{currentUserId}}"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Фильтр по пользователю. Покажет все действия конкретного пользователя."
+					}
+				},
+				{
+					"name": "Get Audit Logs by Entity Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs?entityType=CLIENT&page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "entityType",
+									"value": "CLIENT"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Фильтр по типу сущности. Варианты: USER, CLIENT, INVESTOR, CAR, DEAL, PAYMENT, DOCUMENT."
+					}
+				},
+				{
+					"name": "Get Audit Logs by Action",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs?action=CREATE&page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "action",
+									"value": "CREATE"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Фильтр по действию. Варианты: CREATE, UPDATE, DELETE, LOGIN, LOGOUT."
+					}
+				},
+				{
+					"name": "Get Audit Logs by Date Range",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs?dateFrom=2026-11-01T00:00:00.000Z&dateTo=2026-11-30T23:59:59.000Z",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "dateFrom",
+									"value": "2026-11-01T00:00:00.000Z"
+								},
+								{
+									"key": "dateTo",
+									"value": "2026-11-30T23:59:59.000Z"
+								}
+							]
+						},
+						"description": "Фильтр по диапазону дат. Полезно для отчетов за период."
+					}
+				},
+				{
+					"name": "Get Audit Logs for Specific Entity",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs?entityId={{clientId}}&entityType=CLIENT",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "entityId",
+									"value": "{{clientId}}"
+								},
+								{
+									"key": "entityType",
+									"value": "CLIENT"
+								}
+							]
+						},
+						"description": "Получить всю историю изменений конкретной сущности (например, все действия с конкретным клиентом)."
+					}
+				}
+			],
+			"description": "Логи аудита действий пользователей. Только для ADMIN. Логи создаются автоматически для всех POST/PATCH/DELETE запросов, а также для LOGIN/LOGOUT."
 		}
 	]
 }

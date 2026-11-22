@@ -9,9 +9,11 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 
 import type { ExpiresStringValue } from 'src/common/types';
 import { JwtAuthGuard } from './guards';
+import { AuditLogModule } from 'src/audit-log/audit-log.module';
 
 @Module({
   imports: [
+    AuditLogModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

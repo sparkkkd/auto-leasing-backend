@@ -213,23 +213,29 @@ model AuditLog {
   id String @id @default(cuid())
 
   userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   action     AuditAction
-  entityType String
+  entityType EntityType
   entityId   String
+  changes    Json        @default("{}")
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
 
-  changes Json?
-
-  ipAddress String?
-  userAgent String?
-
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-
-  @@index([entityType, entityId])
   @@index([userId])
+  @@index([entityType])
+  @@index([action])
   @@index([createdAt])
-  @@map("audit_logs")
+}
+
+enum EntityType {
+  USER
+  CLIENT
+  INVESTOR
+  CAR
+  DEAL
+  PAYMENT
+  DOCUMENT
 }
 
 enum AuditAction {

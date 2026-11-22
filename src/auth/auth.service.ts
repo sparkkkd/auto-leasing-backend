@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { User } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 import type { ExpiresStringValue } from 'src/common/types';
+import { AuditLogService } from 'src/audit-log/audit-log.service';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +14,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private auditLogService: AuditLogService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<User> {
@@ -33,12 +35,28 @@ export class AuthService {
     return user;
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, ipAddress?: string, userAgent?: string) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
 
     const tokens = await this.generateTokens(user.id, user.email);
 
     await this.saveRefreshToken(user.id, tokens.refreshToken);
+
+    this.auditLogService
+      .create({
+        userId: user.id,
+        action: 'LOGIN',
+        entityType: 'USER',
+        entityId: user.id,
+        changes: { email: user.email },
+        ipAddress,
+        userAgent,
+      })
+      .catch((error: unknown) => {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.error('Failed to write login audit log:', errorMessage);
+      });
 
     return {
       user: {
@@ -86,10 +104,31 @@ export class AuthService {
     };
   }
 
-  async logout(userId: string, refreshToken: string) {
+  async logout(
+    userId: string,
+    refreshToken: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
     await this.prisma.refreshToken.deleteMany({
       where: { userId, token: refreshToken },
     });
+
+    this.auditLogService
+      .create({
+        userId,
+        action: 'LOGOUT',
+        entityType: 'USER',
+        entityId: userId,
+        ipAddress,
+        userAgent,
+      })
+      .catch((error: unknown) => {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
+        console.error('Failed to write logout audit log:', errorMessage);
+      });
   }
 
   async getMe(userId: string) {
