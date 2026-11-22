@@ -10,6 +10,7 @@ import { ClientsModule } from './clients/clients.module';
 import { InvestorsModule } from './investors/investors.module';
 import { CarsModule } from './cars/cars.module';
 import { DealsModule } from './deals/deals.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { DealsModule } from './deals/deals.module';
     InvestorsModule,
     CarsModule,
     DealsModule,
+    PaymentsModule,
   ],
   controllers: [],
   providers: [

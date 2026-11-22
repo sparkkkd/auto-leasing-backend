@@ -142,7 +142,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/clients?page=1&limit=10&search=Иван",
+							"raw": "{{baseUrl}}/clients?page=1&limit=10",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -157,10 +157,6 @@
 								{
 									"key": "limit",
 									"value": "10"
-								},
-								{
-									"key": "search",
-									"value": "Иван"
 								}
 							]
 						}
@@ -462,7 +458,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/cars?page=1&limit=10&status=IN_STOCK",
+							"raw": "{{baseUrl}}/cars?page=1&limit=10",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -477,10 +473,6 @@
 								{
 									"key": "limit",
 									"value": "10"
-								},
-								{
-									"key": "status",
-									"value": "IN_STOCK"
 								}
 							]
 						}
@@ -619,36 +611,12 @@
 			"name": "Deals",
 			"item": [
 				{
-					"name": "Get All Deals (with filters)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"pm.test('Status code is 200', () => pm.expect(pm.response.code).to.equal(200));",
-									"const res = pm.response.json();",
-									"pm.test('Has data array and total', () => {",
-									"    pm.expect(res).to.have.property('data').that.is.an('array');",
-									"    pm.expect(res).to.have.property('total').that.is.a('number');",
-									"});",
-									"pm.test('Deals include related entities', () => {",
-									"    if (res.data.length > 0) {",
-									"        const deal = res.data[0];",
-									"        pm.expect(deal).to.have.property('client');",
-									"        pm.expect(deal).to.have.property('investor');",
-									"        pm.expect(deal).to.have.property('car');",
-									"    }",
-									"});"
-								]
-							}
-						}
-					],
+					"name": "Get All Deals",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/deals?page=1&limit=10&status=ACTIVE",
+							"raw": "{{baseUrl}}/deals?page=1&limit=10",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -663,14 +631,9 @@
 								{
 									"key": "limit",
 									"value": "10"
-								},
-								{
-									"key": "status",
-									"value": "ACTIVE"
 								}
 							]
-						},
-						"description": "Фильтры: search, clientId, investorId, status. Поиск работает по номеру договора, клиенту, инвестору, машине."
+						}
 					}
 				},
 				{
@@ -682,10 +645,7 @@
 								"type": "text/javascript",
 								"exec": [
 									"if (pm.response.code === 201) {",
-									"    const res = pm.response.json();",
-									"    pm.environment.set('dealId', res.id);",
-									"    console.log('✅ Deal ID saved:', res.id);",
-									"    console.log('💡 Car status should be IN_WORK now');",
+									"    pm.environment.set('dealId', pm.response.json().id);",
 									"}"
 								]
 							}
@@ -711,33 +671,11 @@
 							"path": [
 								"deals"
 							]
-						},
-						"description": "Создает сделку и автоматически меняет статус машины на IN_WORK. Требует существующих clientId, carId, investorId. Номер договора должен быть уникальным."
+						}
 					}
 				},
 				{
-					"name": "Get Deal By ID (with balance calculation)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    const res = pm.response.json();",
-									"    pm.test('Has balance fields', () => {",
-									"        pm.expect(res).to.have.property('clientRemaining');",
-									"        pm.expect(res).to.have.property('investorRemaining');",
-									"        pm.expect(res).to.have.property('clientPaid');",
-									"        pm.expect(res).to.have.property('investorPaid');",
-									"    });",
-									"    console.log('💰 Client remaining:', res.clientRemaining);",
-									"    console.log('💸 Investor remaining:', res.investorRemaining);",
-									"}"
-								]
-							}
-						}
-					],
+					"name": "Get Deal By ID",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -756,12 +694,11 @@
 									"value": "{{dealId}}"
 								}
 							]
-						},
-						"description": "Возвращает детали сделки с расчетом остатков: clientRemaining, investorRemaining, clientPaid, investorPaid."
+						}
 					}
 				},
 				{
-					"name": "Update Deal (change notes)",
+					"name": "Update Deal",
 					"request": {
 						"method": "PATCH",
 						"header": [
@@ -772,7 +709,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"notes\": \"Обновленные заметки по сделке\",\n  \"clientTotalAmount\": 2900000\n}"
+							"raw": "{\n  \"notes\": \"Обновленные заметки по сделке\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/deals/:id",
@@ -789,55 +726,18 @@
 									"value": "{{dealId}}"
 								}
 							]
-						},
-						"description": "Можно менять: contractNumber, startDate, endDate, clientTotalAmount, investorTotalAmount, status, notes. НЕЛЬЗЯ менять: clientId, carId, investorId."
+						}
 					}
 				},
 				{
-					"name": "Cancel Deal (returns car to IN_STOCK)",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"status\": \"CANCELLED\",\n  \"notes\": \"Сделка отменена — клиент передумал\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/deals/:id",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"deals",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{dealId}}"
-								}
-							]
-						},
-						"description": "При смене статуса на CANCELLED машина автоматически возвращается в статус IN_STOCK."
-					}
-				},
-				{
-					"name": "Delete Deal (only if no payments)",
+					"name": "Delete Deal",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"if (pm.response.code === 200) {",
-									"    pm.environment.unset('dealId');",
-									"    console.log('✅ Car status should be IN_STOCK now');",
-									"}"
+									"if (pm.response.code === 200) pm.environment.unset('dealId');"
 								]
 							}
 						}
@@ -860,8 +760,290 @@
 									"value": "{{dealId}}"
 								}
 							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "Get All Payments (with filters)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', () => pm.expect(pm.response.code).to.equal(200));",
+									"const res = pm.response.json();",
+									"pm.test('Has data array and total', () => {",
+									"    pm.expect(res).to.have.property('data').that.is.an('array');",
+									"    pm.expect(res).to.have.property('total').that.is.a('number');",
+									"});",
+									"pm.test('Amount is number (not Decimal)', () => {",
+									"    if (res.data.length > 0) {",
+									"        pm.expect(typeof res.data[0].amount).to.equal('number');",
+									"    }",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payments?dealId={{dealId}}&direction=CLIENT_TO_COMPANY&page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payments"
+							],
+							"query": [
+								{
+									"key": "dealId",
+									"value": "{{dealId}}"
+								},
+								{
+									"key": "direction",
+									"value": "CLIENT_TO_COMPANY"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
 						},
-						"description": "Удаляет сделку только если нет платежей. Машина возвращается в IN_STOCK. Если есть платежи — используйте отмену (CANCELLED) вместо удаления."
+						"description": "Фильтры: dealId, direction (CLIENT_TO_COMPANY / COMPANY_TO_INVESTOR), dateFrom, dateTo. Суммы возвращаются как number, а не Decimal."
+					}
+				},
+				{
+					"name": "Create Payment (CLIENT_TO_COMPANY)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const res = pm.response.json();",
+									"    pm.environment.set('paymentId', res.id);",
+									"    console.log('✅ Payment ID saved:', res.id);",
+									"    console.log('💰 Amount:', res.amount);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"dealId\": \"{{dealId}}\",\n  \"direction\": \"CLIENT_TO_COMPANY\",\n  \"amount\": 50000,\n  \"paidAt\": \"2026-11-22T00:00:00.000Z\",\n  \"comment\": \"Ежемесячный платеж за ноябрь\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payments"
+							]
+						},
+						"description": "Платеж от клиента компании. Проверяет существование сделки. Сумма должна быть > 0."
+					}
+				},
+				{
+					"name": "Create Payment (COMPANY_TO_INVESTOR)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.environment.set('paymentToInvestorId', pm.response.json().id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"dealId\": \"{{dealId}}\",\n  \"direction\": \"COMPANY_TO_INVESTOR\",\n  \"amount\": 45000,\n  \"paidAt\": \"2026-11-22T00:00:00.000Z\",\n  \"comment\": \"Платеж инвестору за ноябрь\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payments"
+							]
+						},
+						"description": "Платеж компании инвестору. Создается второй платеж по той же сделке для демонстрации обоих направлений."
+					}
+				},
+				{
+					"name": "Get Payment By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const res = pm.response.json();",
+									"    pm.test('Has deal info', () => {",
+									"        pm.expect(res).to.have.property('deal');",
+									"        pm.expect(res.deal).to.have.property('contractNumber');",
+									"    });",
+									"    pm.test('Has documents array', () => {",
+									"        pm.expect(res).to.have.property('documents').that.is.an('array');",
+									"    });",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payments/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payments",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{paymentId}}"
+								}
+							]
+						},
+						"description": "Возвращает детали платежа с информацией о сделке и списком прикрепленных документов."
+					}
+				},
+				{
+					"name": "Update Payment",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 55000,\n  \"comment\": \"Исправленная сумма платежа\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payments/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payments",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{paymentId}}"
+								}
+							]
+						},
+						"description": "Можно менять: direction, amount, paidAt, comment. Нельзя менять dealId (платеж привязан к сделке)."
+					}
+				},
+				{
+					"name": "Delete Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.environment.unset('paymentId');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payments/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payments",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{paymentId}}"
+								}
+							]
+						},
+						"description": "Удаляет платеж только если к нему не прикреплены документы. Если есть документы — вернется 400 Bad Request."
+					}
+				},
+				{
+					"name": "Get Payments by Date Range",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payments?dateFrom=2026-11-01T00:00:00.000Z&dateTo=2026-11-30T23:59:59.000Z",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payments"
+							],
+							"query": [
+								{
+									"key": "dateFrom",
+									"value": "2026-11-01T00:00:00.000Z"
+								},
+								{
+									"key": "dateTo",
+									"value": "2026-11-30T23:59:59.000Z"
+								}
+							]
+						},
+						"description": "Поиск платежей в диапазоне дат. Полезно для отчетов за месяц/квартал/год."
 					}
 				}
 			]
