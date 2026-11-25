@@ -11,7 +11,6 @@ import {
 import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { User } from '@prisma/client';
 import type { AuthenticatedRequest, CookieRequest } from 'src/common/types';
 import { CurrentUser, Public } from './decorators';
 
@@ -58,20 +57,28 @@ export class AuthController {
       throw new UnauthorizedException('Refresh token not found');
     }
 
-    const user = request.user as User;
-    const result = await this.authService.refreshTokens(user.id, refreshToken);
+    try {
+      const userId = this.authService.decodeRefreshToken(refreshToken);
 
-    response.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+      const result = await this.authService.refreshTokens(userId, refreshToken);
 
-    return {
-      user: result.user,
-      accessToken: result.accessToken,
-    };
+      response.cookie('refreshToken', result.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return {
+        user: result.user,
+        accessToken: result.accessToken,
+      };
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Неизвестная ошибка';
+      console.error('Refresh error:', message);
+      throw new UnauthorizedException('Недействительный refresh token');
+    }
   }
 
   @Post('logout')

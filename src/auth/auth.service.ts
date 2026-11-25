@@ -7,6 +7,7 @@ import { User } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 import type { ExpiresStringValue } from 'src/common/types';
 import { AuditLogService } from 'src/audit-log/audit-log.service';
+import { JwtRefreshPayload } from 'src/common/types/jwt.type';
 
 @Injectable()
 export class AuthService {
@@ -89,7 +90,9 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.id, user.email);
 
-    await this.prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
+    await this.prisma.refreshToken.deleteMany({
+      where: { id: tokenRecord.id },
+    });
     await this.saveRefreshToken(user.id, tokens.refreshToken);
 
     return {
@@ -186,5 +189,17 @@ export class AuthService {
         expiresAt,
       },
     });
+  }
+
+  decodeRefreshToken(refreshToken: string) {
+    try {
+      const jwtSecret = this.configService.getOrThrow<string>('JWT_SECRET');
+      const payload = this.jwtService.verify<JwtRefreshPayload>(refreshToken, {
+        secret: jwtSecret,
+      });
+      return payload.sub;
+    } catch {
+      throw new UnauthorizedException('Недействительный refresh token');
+    }
   }
 }
