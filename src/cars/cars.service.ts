@@ -48,7 +48,7 @@ export class CarsService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          deal: {
+          deals: {
             include: {
               client: true,
               investor: true,
@@ -72,7 +72,7 @@ export class CarsService {
     const car = await this.prisma.car.findUnique({
       where: { id },
       include: {
-        deal: {
+        deals: {
           include: {
             client: true,
             investor: true,
@@ -93,6 +93,12 @@ export class CarsService {
     const existingVin = await this.prisma.car.findUnique({
       where: { vin: createCarDto.vin },
     });
+
+    if (createCarDto.sellingPrice < createCarDto.purchasePrice) {
+      throw new BadRequestException(
+        'Цена продажи не может быть ниже цены покупки',
+      );
+    }
 
     if (existingVin) {
       throw new ConflictException('Машина с таким VIN уже существует');
@@ -120,6 +126,22 @@ export class CarsService {
 
     if (!car) {
       throw new NotFoundException('Машина не найдена');
+    }
+
+    const currentCar = await this.prisma.car.findUnique({ where: { id } });
+    if (!currentCar) {
+      throw new NotFoundException('Машина не найдена');
+    }
+
+    const finalPurchasePrice =
+      updateCarDto.purchasePrice ?? currentCar.purchasePrice;
+    const finalSellingPrice =
+      updateCarDto.sellingPrice ?? currentCar.sellingPrice;
+
+    if (finalSellingPrice < finalPurchasePrice) {
+      throw new BadRequestException(
+        'Цена продажи не может быть ниже цены покупки',
+      );
     }
 
     if (updateCarDto.vin && updateCarDto.vin !== car.vin) {
@@ -155,7 +177,7 @@ export class CarsService {
     const car = await this.prisma.car.findUnique({
       where: { id },
       include: {
-        deal: true,
+        deals: true,
       },
     });
 
@@ -163,7 +185,7 @@ export class CarsService {
       throw new NotFoundException('Машина не найдена');
     }
 
-    if (car.deal) {
+    if (car.deals) {
       throw new BadRequestException('Нельзя удалить машину с активной сделкой');
     }
 

@@ -4,9 +4,21 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { Prisma, CarStatus, DealStatus } from '@prisma/client';
+import {
+  Prisma,
+  CarStatus,
+  DealStatus,
+  PaymentDirection,
+} from '@prisma/client';
 import { CreateDealDto, UpdateDealDto, FindAllDealsDto } from './dto';
 import { PrismaService } from 'prisma/prisma.service';
+import { OverduePaymentDto } from './dto/overdue-payment.dto';
+import { addMonthsSafe } from 'src/common/utils/addMonthsSafe';
+import {
+  ClientPaymentSchedulesDto,
+  PaymentScheduleDto,
+  PaymentScheduleItem,
+} from './dto/payment-schedule.dto';
 
 @Injectable()
 export class DealsService {
@@ -47,7 +59,7 @@ export class DealsService {
         where.AND = words.map((word) => ({
           OR: [
             { contractNumber: { contains: word, mode: 'insensitive' } },
-            { notes: { contains: word, mode: 'insensitive' } },
+            { comments: { contains: word, mode: 'insensitive' } },
             { client: { firstName: { contains: word, mode: 'insensitive' } } },
             { client: { lastName: { contains: word, mode: 'insensitive' } } },
             { investor: { name: { contains: word, mode: 'insensitive' } } },
@@ -104,7 +116,7 @@ export class DealsService {
         investor: true,
         car: true,
         payments: {
-          orderBy: { paidAt: 'desc' },
+          orderBy: { paymentDate: 'desc' },
           include: {
             documents: true,
           },
@@ -165,14 +177,14 @@ export class DealsService {
 
     const car = await this.prisma.car.findUnique({
       where: { id: createDealDto.carId },
-      include: { deal: true },
+      include: { deals: true },
     });
 
     if (!car) {
       throw new NotFoundException('Машина не найдена');
     }
 
-    if (car.deal) {
+    if (car.deals) {
       throw new ConflictException('Машина уже участвует в другой сделке');
     }
 
@@ -192,17 +204,26 @@ export class DealsService {
           carId: createDealDto.carId,
           investorId: createDealDto.investorId,
           contractNumber: createDealDto.contractNumber,
-          startDate,
-          endDate,
+          startDate: new Date(createDealDto.startDate),
+          endDate: new Date(createDealDto.endDate),
+          term: createDealDto.term,
+          firstPayment: createDealDto.firstPayment,
+          monthlyPayment: createDealDto.monthlyPayment,
+          finalCarPrice: createDealDto.finalCarPrice,
           clientTotalAmount: createDealDto.clientTotalAmount,
           investorTotalAmount: createDealDto.investorTotalAmount,
           status: createDealDto.status || 'ACTIVE',
+          contractScanId: createDealDto.contractScanId,
+          investorContractScanId: createDealDto.investorContractScanId,
+          comments: createDealDto.comments,
           notes: createDealDto.notes,
         },
         include: {
           client: { select: { id: true, firstName: true, lastName: true } },
           investor: { select: { id: true, name: true } },
           car: { select: { id: true, make: true, model: true, vin: true } },
+          contractScan: true,
+          investorContractScan: true,
         },
       });
 
@@ -253,23 +274,35 @@ export class DealsService {
       }
     }
 
-    if (
-      updateDealDto.status === DealStatus.CANCELLED &&
-      deal.status !== DealStatus.CANCELLED
-    ) {
-      await this.prisma.$transaction(async (tx) => {
-        await tx.deal.update({
+    const RELEASE_CAR_STATUSES: DealStatus[] = [
+      DealStatus.CANCELLED,
+      DealStatus.TERMINATED,
+    ];
+
+    const shouldReleaseCar =
+      updateDealDto.status !== undefined &&
+      RELEASE_CAR_STATUSES.includes(updateDealDto.status) &&
+      !RELEASE_CAR_STATUSES.includes(deal.status);
+
+    if (shouldReleaseCar) {
+      return this.prisma.$transaction(async (tx) => {
+        const updatedDeal = await tx.deal.update({
           where: { id },
           data: updateDealDto,
+          include: {
+            client: { select: { id: true, firstName: true, lastName: true } },
+            investor: { select: { id: true, name: true } },
+            car: { select: { id: true, make: true, model: true, vin: true } },
+          },
         });
 
         await tx.car.update({
           where: { id: deal.carId },
           data: { status: CarStatus.IN_STOCK },
         });
-      });
 
-      return this.findOne(id);
+        return updatedDeal;
+      });
     }
 
     const updatedDeal = await this.prisma.deal.update({
@@ -313,5 +346,193 @@ export class DealsService {
     });
 
     return { message: 'Сделка успешно удалена' };
+  }
+
+  async getOverduePayments(): Promise<OverduePaymentDto[]> {
+    const deals = await this.prisma.deal.findMany({
+      where: {
+        status: DealStatus.ACTIVE,
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            middleName: true,
+          },
+        },
+        payments: {
+          where: {
+            direction: PaymentDirection.CLIENT_TO_COMPANY,
+          },
+          orderBy: {
+            paymentDate: 'asc',
+          },
+        },
+      },
+    });
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const overdueList: OverduePaymentDto[] = [];
+
+    for (const deal of deals) {
+      const paidCount = deal.payments.length;
+
+      if (paidCount >= deal.term) {
+        continue;
+      }
+
+      const currentMonth = paidCount + 1;
+
+      const expectedDate = addMonthsSafe(deal.startDate, paidCount);
+
+      expectedDate.setHours(0, 0, 0, 0);
+
+      const daysUntilDue = Math.floor(
+        (expectedDate.getTime() - now.getTime()) / MS_PER_DAY,
+      );
+
+      let status: 'warning' | 'critical' | 'overdue';
+      if (daysUntilDue < 0) {
+        status = 'overdue';
+      } else if (daysUntilDue <= 1) {
+        status = 'critical';
+      } else if (daysUntilDue <= 3) {
+        status = 'warning';
+      } else {
+        continue;
+      }
+
+      const clientName = [
+        deal.client.lastName,
+        deal.client.firstName,
+        deal.client.middleName,
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      overdueList.push({
+        dealId: deal.id,
+        clientId: deal.client.id,
+        clientName,
+        nextPaymentDate: expectedDate,
+        monthlyPayment: Number(deal.monthlyPayment),
+        status,
+        daysUntilDue,
+        currentMonth,
+      });
+    }
+
+    return overdueList.sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+  }
+
+  async getPaymentSchedule(
+    clientId: string,
+  ): Promise<ClientPaymentSchedulesDto> {
+    const client = await this.prisma.client.findUnique({
+      where: { id: clientId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+      },
+    });
+
+    if (!client) {
+      throw new NotFoundException('Клиент не найден');
+    }
+
+    const deals = await this.prisma.deal.findMany({
+      where: {
+        clientId,
+      },
+      include: {
+        payments: {
+          where: {
+            direction: PaymentDirection.CLIENT_TO_COMPANY,
+          },
+          orderBy: {
+            paymentDate: 'asc',
+          },
+        },
+      },
+      orderBy: {
+        startDate: 'desc',
+      },
+    });
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const schedules: PaymentScheduleDto[] = deals.map((deal) => {
+      const payments: PaymentScheduleItem[] = [];
+
+      for (let monthIndex = 0; monthIndex < deal.term; monthIndex++) {
+        const month = monthIndex + 1;
+        const dueDate = addMonthsSafe(deal.startDate, monthIndex);
+        dueDate.setHours(0, 0, 0, 0);
+
+        const actualPayment = deal.payments[monthIndex];
+
+        let status: 'paid' | 'pending' | 'overdue';
+        let paymentId: string | undefined;
+        let paidAt: Date | undefined;
+        let amount: number | undefined;
+
+        if (actualPayment) {
+          status = 'paid';
+          paymentId = actualPayment.id;
+          paidAt = actualPayment.paymentDate;
+          amount = Number(actualPayment.amount);
+        } else {
+          if (
+            deal.status === DealStatus.COMPLETED ||
+            deal.status === DealStatus.CANCELLED ||
+            deal.status === DealStatus.TERMINATED
+          ) {
+            status = 'pending';
+          } else {
+            const daysUntilDue = Math.floor(
+              (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+            );
+            status = daysUntilDue < 0 ? 'overdue' : 'pending';
+          }
+        }
+
+        payments.push({
+          month,
+          dueDate,
+          status,
+          paymentId,
+          paidAt,
+          amount,
+        });
+      }
+
+      return {
+        dealId: deal.id,
+        dealStatus: deal.status,
+        clientName: [client.lastName, client.firstName, client.middleName]
+          .filter(Boolean)
+          .join(' '),
+        monthlyPayment: Number(deal.monthlyPayment),
+        term: deal.term,
+        startDate: deal.startDate,
+        payments,
+      };
+    });
+
+    return {
+      clientId: client.id,
+      clientName: [client.lastName, client.firstName, client.middleName]
+        .filter(Boolean)
+        .join(' '),
+      schedules,
+    };
   }
 }

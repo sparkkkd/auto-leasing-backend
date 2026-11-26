@@ -5,6 +5,7 @@ import {
   IsEnum,
   MinLength,
   MaxLength,
+  IsArray,
 } from 'class-validator';
 import { InvestorType } from '@prisma/client';
 
@@ -40,6 +41,11 @@ export class CreateInvestorDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(2000)
-  notes?: string;
+  @MaxLength(2000, { message: 'Комментарий не должен превышать 2000 символов' })
+  comments?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true, message: 'Каждая заметка должна быть строкой' })
+  notes?: string[];
 }

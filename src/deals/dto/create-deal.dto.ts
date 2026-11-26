@@ -2,52 +2,90 @@ import {
   IsString,
   IsOptional,
   IsEnum,
-  IsDateString,
   IsNumber,
-  Min,
+  IsDateString,
+  IsInt,
+  IsArray,
+  MinLength,
   MaxLength,
+  Min,
 } from 'class-validator';
 import { DealStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
 
 export class CreateDealDto {
-  @IsString({ message: 'clientId должен быть строкой' })
-  clientId!: string;
-
-  @IsString({ message: 'carId должен быть строкой' })
-  carId!: string;
-
-  @IsString({ message: 'investorId должен быть строкой' })
-  investorId!: string;
-
-  @IsString({ message: 'Номер договора обязателен' })
-  @MaxLength(100)
+  @IsString()
+  @MinLength(1, { message: 'Номер договора обязателен' })
+  @MaxLength(50)
   contractNumber!: string;
 
-  @IsDateString({}, { message: 'startDate должна быть в формате ISO 8601' })
+  @IsDateString({}, { message: 'Некорректная дата начала' })
   startDate!: string;
 
-  @IsDateString({}, { message: 'endDate должна быть в формате ISO 8601' })
+  @IsDateString({}, { message: 'Некорректная дата окончания' })
   endDate!: string;
 
   @Type(() => Number)
-  @IsNumber({}, { message: 'Итоговоя сумма клиента должна быть числом' })
-  @Min(0.01, { message: 'Итоговоя сумма клиента должна быть больше 0' })
+  @IsInt({ message: 'Срок должен быть целым числом' })
+  @Min(1, { message: 'Срок должен быть >= 1 месяца' })
+  term!: number;
+
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Первый взнос должен быть числом' })
+  @Min(0, { message: 'Первый взнос должен быть >= 0' })
+  firstPayment!: number;
+
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Ежемесячный платёж должен быть числом' })
+  @Min(0, { message: 'Ежемесячный платёж должен быть >= 0' })
+  monthlyPayment!: number;
+
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Итоговая цена машины должна быть числом' })
+  @Min(0, { message: 'Итоговая цена машины должна быть >= 0' })
+  finalCarPrice!: number;
+
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Итоговая сумма клиента должна быть числом' })
+  @Min(0, { message: 'Итоговая сумма клиента должна быть >= 0' })
   clientTotalAmount!: number;
 
   @Type(() => Number)
-  @IsNumber({}, { message: 'Итоговоя сумма инвестору должна быть числом' })
-  @Min(0.01, { message: 'Итоговоя сумма инвестору должна быть больше 0' })
+  @IsNumber({}, { message: 'Итоговая сумма инвестора должна быть числом' })
+  @Min(0, { message: 'Итоговая сумма инвестора должна быть >= 0' })
   investorTotalAmount!: number;
 
   @IsOptional()
   @IsEnum(DealStatus, {
-    message: 'Статус должен быть DRAFT, ACTIVE, COMPLETED или CANCELLED',
+    message:
+      'Статус должен быть DRAFT, ACTIVE, COMPLETED, CANCELLED или TERMINATED',
   })
   status?: DealStatus;
 
+  @IsString({ message: 'clientId обязателен' })
+  clientId!: string;
+
+  @IsString({ message: 'investorId обязателен' })
+  investorId!: string;
+
+  @IsString()
+  carId!: string;
+
   @IsOptional()
   @IsString()
-  @MaxLength(2000)
-  notes?: string;
+  contractScanId?: string;
+
+  @IsOptional()
+  @IsString()
+  investorContractScanId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000, { message: 'Комментарий не должен превышать 2000 символов' })
+  comments?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true, message: 'Каждая заметка должна быть строкой' })
+  notes?: string[];
 }

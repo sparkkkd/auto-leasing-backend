@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { FindAllDocumentsDto } from './dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { UploadedFile } from 'src/common/types';
+import { ExpiringInsuranceDto } from './dto/expiring-insurance.dto';
 
 @Injectable()
 export class DocumentsService {
@@ -214,5 +215,116 @@ export class DocumentsService {
     await this.prisma.document.delete({ where: { id } });
 
     return { message: 'Документ успешно удален' };
+  }
+
+  async getExpiringInsurance(
+    daysThreshold = 7,
+  ): Promise<ExpiringInsuranceDto[]> {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const thresholdDate = new Date(now);
+    thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
+
+    const insurances = await this.prisma.document.findMany({
+      where: {
+        type: DocumentType.INSURANCE,
+        expiresAt: {
+          not: null,
+          lte: thresholdDate,
+        },
+        carId: { not: null },
+      },
+      include: {
+        car: {
+          select: {
+            id: true,
+            make: true,
+            model: true,
+            year: true,
+            vin: true,
+            licensePlate: true,
+          },
+        },
+      },
+      orderBy: {
+        expiresAt: 'asc',
+      },
+    });
+
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const result: ExpiringInsuranceDto[] = [];
+
+    for (const insurance of insurances) {
+      if (!insurance.expiresAt || !insurance.car) continue;
+
+      const expiresAt = new Date(insurance.expiresAt);
+      expiresAt.setHours(0, 0, 0, 0);
+
+      const daysUntilExpiry = Math.floor(
+        (expiresAt.getTime() - now.getTime()) / MS_PER_DAY,
+      );
+
+      let status: 'critical' | 'expiring' | 'expired';
+      if (daysUntilExpiry < 0) {
+        status = 'expired';
+      } else if (daysUntilExpiry <= 1) {
+        status = 'critical';
+      } else {
+        status = 'expiring';
+      }
+
+      const car = insurance.car;
+      const carName = `${car.make} ${car.model} ${car.year}`.trim();
+
+      result.push({
+        carId: car.id,
+        carName,
+        licensePlate: car.licensePlate ?? undefined,
+        insuranceId: insurance.id,
+        expiresAt,
+        daysUntilExpiry,
+        status,
+      });
+    }
+
+    return result;
+  }
+
+  async getCarInsurance(carId: string) {
+    const car = await this.prisma.car.findUnique({
+      where: { id: carId },
+      select: { id: true, make: true, model: true },
+    });
+
+    if (!car) {
+      throw new NotFoundException('Машина не найдена');
+    }
+
+    const insurances = await this.prisma.document.findMany({
+      where: {
+        carId,
+        type: DocumentType.INSURANCE,
+      },
+      orderBy: { expiresAt: 'desc' },
+    });
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    return insurances.map((doc) => {
+      const expiresAt = doc.expiresAt ? new Date(doc.expiresAt) : null;
+      const isExpired = expiresAt ? expiresAt < now : false;
+      const isExpiringSoon =
+        expiresAt && !isExpired
+          ? (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24) <= 7
+          : false;
+
+      return {
+        ...doc,
+        isExpired,
+        isExpiringSoon,
+      };
+    });
   }
 }

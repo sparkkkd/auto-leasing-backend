@@ -4,6 +4,8 @@ import {
   IsEmail,
   MinLength,
   MaxLength,
+  Matches,
+  IsArray,
 } from 'class-validator';
 
 export class CreateClientDto {
@@ -23,8 +25,12 @@ export class CreateClientDto {
   middleName?: string;
 
   @IsString()
-  @MinLength(5, { message: 'Телефон обязателен' })
-  @MaxLength(20)
+  @Matches(
+    /^\+?[78][\s-]?\(?[0-9]{3}\)?[\s-]?[0-9]{3}[\s-]?[0-9]{2}[\s-]?[0-9]{2}$/,
+    {
+      message: 'Некорректный формат телефона',
+    },
+  )
   phone!: string;
 
   @IsOptional()
@@ -43,6 +49,11 @@ export class CreateClientDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(2000)
-  notes?: string;
+  @MaxLength(2000, { message: 'Комментарий не должен превышать 2000 символов' })
+  comments?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true, message: 'Каждая заметка должна быть строкой' })
+  notes?: string[];
 }

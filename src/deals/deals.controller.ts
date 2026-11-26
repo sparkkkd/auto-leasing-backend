@@ -14,6 +14,7 @@ import { CreateDealDto, UpdateDealDto, FindAllDealsDto } from './dto';
 import { UserRole } from '@prisma/client';
 import { RolesGuard } from 'src/auth/guards';
 import { Roles } from 'src/auth/decorators';
+import { OverduePaymentDto } from './dto/overdue-payment.dto';
 
 @Controller('deals')
 @UseGuards(RolesGuard)
@@ -48,5 +49,11 @@ export class DealsController {
   @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string) {
     return this.dealsService.remove(id);
+  }
+
+  @Get('overdue')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER)
+  getOverduePayments(): Promise<OverduePaymentDto[]> {
+    return this.dealsService.getOverduePayments();
   }
 }

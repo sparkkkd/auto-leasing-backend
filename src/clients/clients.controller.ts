@@ -14,11 +14,16 @@ import { CreateClientDto, UpdateClientDto, FindAllClientsDto } from './dto';
 import { UserRole } from '@prisma/client';
 import { RolesGuard } from 'src/auth/guards';
 import { Roles } from 'src/auth/decorators';
+import { DealsService } from 'src/deals/deals.service';
+import { ClientPaymentSchedulesDto } from 'src/deals/dto/payment-schedule.dto';
 
 @Controller('clients')
 @UseGuards(RolesGuard)
 export class ClientsController {
-  constructor(private readonly clientsService: ClientsService) {}
+  constructor(
+    private readonly clientsService: ClientsService,
+    private readonly dealsService: DealsService,
+  ) {}
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER)
@@ -48,5 +53,13 @@ export class ClientsController {
   @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string) {
     return this.clientsService.remove(id);
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER)
+  @Get(':id/payments/schedule')
+  getPaymentSchedule(
+    @Param('id') id: string,
+  ): Promise<ClientPaymentSchedulesDto> {
+    return this.dealsService.getPaymentSchedule(id);
   }
 }

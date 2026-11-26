@@ -25,8 +25,8 @@ export class UpdatePaymentDto {
   amount?: number;
 
   @IsOptional()
-  @IsDateString({}, { message: 'paidAt должна быть в формате ISO 8601' })
-  paidAt?: string;
+  @IsDateString({}, { message: 'paymentDate должна быть в формате ISO 8601' })
+  paymentDate?: string;
 
   @IsOptional()
   @IsString()

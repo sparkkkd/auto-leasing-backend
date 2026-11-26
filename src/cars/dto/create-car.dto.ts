@@ -8,6 +8,7 @@ import {
   MaxLength,
   Min,
   Max,
+  IsArray,
 } from 'class-validator';
 import { CarStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
@@ -45,8 +46,33 @@ export class CreateCarDto {
   color?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(500, { message: 'Комплектация не должна превышать 500 символов' })
+  equipment?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200, { message: 'Автосалон не должен превышать 200 символов' })
+  showroom?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000, { message: 'Комментарий не должен превышать 2000 символов' })
+  comments?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true, message: 'Каждая заметка должна быть строкой' })
+  notes?: string[];
+
+  @IsOptional()
+  @IsString()
+  clientId?: string;
+
+  @IsOptional()
   @IsEnum(CarStatus, {
-    message: 'Статус должен быть IN_STOCK, IN_WORK, RESERVED, SOLD или REPAIR',
+    message:
+      'Статус должен быть IN_STOCK, IN_WORK, RESERVED, SOLD, REPAIR, IN_PURCHASE, FOR_ISSUE или SEIZED',
   })
   status?: CarStatus;
 

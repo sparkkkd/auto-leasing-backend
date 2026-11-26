@@ -93,6 +93,7 @@ export class AuditLogInterceptor implements NestInterceptor {
       deals: 'DEAL',
       payments: 'PAYMENT',
       documents: 'DOCUMENT',
+      expenses: 'EXPENSE',
     };
 
     return mapping[resource] || null;

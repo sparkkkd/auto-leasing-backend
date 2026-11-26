@@ -14,11 +14,15 @@ import { CreateCarDto, UpdateCarDto, FindAllCarsDto } from './dto';
 import { UserRole } from '@prisma/client';
 import { RolesGuard } from 'src/auth/guards';
 import { Roles } from 'src/auth/decorators';
+import { DocumentsService } from 'src/documents/documents.service';
 
 @Controller('cars')
 @UseGuards(RolesGuard)
 export class CarsController {
-  constructor(private readonly carsService: CarsService) {}
+  constructor(
+    private readonly carsService: CarsService,
+    private readonly documentsService: DocumentsService,
+  ) {}
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER)
@@ -48,5 +52,11 @@ export class CarsController {
   @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string) {
     return this.carsService.remove(id);
+  }
+
+  @Get(':id/insurance')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER)
+  getCarInsurance(@Param('id') id: string) {
+    return this.documentsService.getCarInsurance(id);
   }
 }

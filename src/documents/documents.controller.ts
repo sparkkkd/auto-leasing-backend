@@ -23,6 +23,7 @@ import type {
   DocumentDownloadResult,
   UploadedFile as UploadedFileDocument,
 } from 'src/common/types';
+import { ExpiringInsuranceDto } from './dto/expiring-insurance.dto';
 
 @Controller('documents')
 @UseGuards(RolesGuard)
@@ -113,5 +114,14 @@ export class DocumentsController {
   @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string) {
     return this.documentsService.remove(id);
+  }
+
+  @Get('insurance/expiring')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER)
+  getExpiringInsurance(
+    @Query('days') days?: string,
+  ): Promise<ExpiringInsuranceDto[]> {
+    const daysThreshold = days ? Number(days) : 7;
+    return this.documentsService.getExpiringInsurance(daysThreshold);
   }
 }

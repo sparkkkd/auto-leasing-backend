@@ -15,6 +15,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { AuditLogService } from './audit-log/audit-log.service';
 import { AuditLogInterceptor } from './audit-log/interceptors';
+import { ExpenseModule } from './expense/expense.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AuditLogInterceptor } from './audit-log/interceptors';
     PaymentsModule,
     DocumentsModule,
     AuditLogModule,
+    ExpenseModule,
   ],
   controllers: [],
   providers: [

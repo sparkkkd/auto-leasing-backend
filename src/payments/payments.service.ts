@@ -26,12 +26,12 @@ export class PaymentsService {
     }
 
     if (dateFrom || dateTo) {
-      where.paidAt = {};
+      where.paymentDate = {};
       if (dateFrom) {
-        where.paidAt.gte = new Date(dateFrom);
+        where.paymentDate.gte = new Date(dateFrom);
       }
       if (dateTo) {
-        where.paidAt.lte = new Date(dateTo);
+        where.paymentDate.lte = new Date(dateTo);
       }
     }
 
@@ -40,7 +40,7 @@ export class PaymentsService {
         where,
         skip,
         take: limit,
-        orderBy: { paidAt: 'desc' },
+        orderBy: { paymentDate: 'desc' },
         include: {
           deal: {
             select: {
@@ -114,8 +114,9 @@ export class PaymentsService {
         dealId: createPaymentDto.dealId,
         direction: createPaymentDto.direction,
         amount: createPaymentDto.amount,
-        paidAt: new Date(createPaymentDto.paidAt),
-        comment: createPaymentDto.comment,
+        paymentDate: new Date(createPaymentDto.paymentDate),
+        comments: createPaymentDto.comments,
+        notes: createPaymentDto.notes,
       },
       include: {
         deal: {
@@ -148,8 +149,8 @@ export class PaymentsService {
       where: { id },
       data: {
         ...updatePaymentDto,
-        paidAt: updatePaymentDto.paidAt
-          ? new Date(updatePaymentDto.paidAt)
+        paymentDate: updatePaymentDto.paymentDate
+          ? new Date(updatePaymentDto.paymentDate)
           : undefined,
       },
       include: {

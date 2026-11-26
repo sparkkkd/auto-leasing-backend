@@ -22,6 +22,7 @@ model User {
 
   refreshTokens RefreshToken[]
   auditLogs     AuditLog[]
+  expenses      Expense[]
 
   @@map("users")
 }
@@ -56,12 +57,16 @@ model Client {
   email        String? @unique
   passportData String
   address      String
-  notes        String?
+
+  comments String?
+  notes    String[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  deals Deal[]
+  cars      Car[]
+  deals     Deal[]
+  documents Document[]
 
   @@map("clients")
 }
@@ -74,12 +79,14 @@ model Investor {
   phone         String?
   email         String?      @unique
   bankDetails   String?
-  notes         String?
+  comments      String?
+  notes         String[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  deals Deal[]
+  deals     Deal[]
+  documents Document[]
 
   @@map("investors")
 }
@@ -95,9 +102,13 @@ model Car {
   make          String
   model         String
   year          Int
-  vin           String    @unique
+  vin           String?   @unique
   licensePlate  String?   @unique
   color         String?
+  equipment     String?
+  showroom      String?
+  comments      String?
+  notes         String[]
   status        CarStatus @default(IN_STOCK)
   purchasePrice Decimal   @db.Decimal(12, 2)
   sellingPrice  Decimal   @db.Decimal(12, 2)
@@ -105,7 +116,13 @@ model Car {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  deal Deal?
+  deals Deal[]
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  expenses  Expense[]
+  documents Document[]
 
   @@map("cars")
 }
@@ -116,33 +133,50 @@ enum CarStatus {
   RESERVED
   SOLD
   REPAIR
+  IN_PURCHASE
+  FOR_ISSUE
+  SEIZED
 }
 
 model Deal {
   id String @id @default(cuid())
 
-  clientId   String
-  carId      String @unique
-  investorId String
-
   contractNumber String   @unique
   startDate      DateTime
   endDate        DateTime
+  term           Int
+  firstPayment   Decimal
+  monthlyPayment Decimal
+  finalCarPrice  Decimal
 
   clientTotalAmount   Decimal @db.Decimal(12, 2)
   investorTotalAmount Decimal @db.Decimal(12, 2)
 
+  payments  Payment[]
+  documents Document[]
+
   status DealStatus @default(ACTIVE)
-  notes  String?
+
+  comments String?
+  notes    String[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client    Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  car       Car        @relation(fields: [carId], references: [id], onDelete: Cascade)
-  investor  Investor   @relation(fields: [investorId], references: [id], onDelete: Cascade)
-  payments  Payment[]
-  documents Document[]
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  investorId String
+  investor   Investor @relation(fields: [investorId], references: [id])
+
+  carId String
+  car   Car    @relation(fields: [carId], references: [id])
+
+  contractScanId String?
+  contractScan   Document? @relation("DealContractScan", fields: [contractScanId], references: [id])
+
+  investorContractScanId String?
+  investorContractScan   Document? @relation("DealInvestorContractScan", fields: [investorContractScanId], references: [id])
 
   @@map("deals")
 }
@@ -152,22 +186,25 @@ enum DealStatus {
   ACTIVE
   COMPLETED
   CANCELLED
+  TERMINATED
 }
 
 model Payment {
-  id     String @id @default(cuid())
-  dealId String
+  id String @id @default(cuid())
 
-  direction PaymentDirection
-  amount    Decimal          @db.Decimal(12, 2)
-  paidAt    DateTime
+  direction   PaymentDirection
+  amount      Decimal          @db.Decimal(12, 2)
+  paymentDate DateTime
 
-  comment String?
+  comments String?
+  notes    String[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  deal      Deal       @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  dealId String
+  deal   Deal   @relation(fields: [dealId], references: [id])
+
   documents Document[]
 
   @@map("payments")
@@ -179,9 +216,7 @@ enum PaymentDirection {
 }
 
 model Document {
-  id        String  @id @default(cuid())
-  paymentId String?
-  dealId    String?
+  id String @id @default(cuid())
 
   fileName     String
   originalName String
@@ -191,10 +226,31 @@ model Document {
 
   type DocumentType
 
-  createdAt DateTime @default(now())
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
-  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  deal    Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  investorId String?
+  investor   Investor? @relation(fields: [investorId], references: [id], onDelete: SetNull)
+
+  dealId String?
+  deal   Deal?   @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  paymentId String?
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  carId String?
+  car   Car?    @relation(fields: [carId], references: [id], onDelete: SetNull)
+
+  dealsAsContractScan         Deal[] @relation("DealContractScan")
+  dealsAsInvestorContractScan Deal[] @relation("DealInvestorContractScan")
+
+  expiresAt DateTime?
+
+  comments String?
+  notes    String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("documents")
 }
@@ -204,6 +260,11 @@ enum DocumentType {
   INVESTOR_DOCUMENT
   CONTRACT_SCAN
   PAYMENT_RECEIPT
+  PTS
+  STS
+  INSURANCE
+  INVESTMENT_CONTRACT
+  DCP
   OTHER
 }
 
@@ -228,6 +289,20 @@ model AuditLog {
   @@index([createdAt])
 }
 
+model Expense {
+  id       String      @id @default(cuid())
+  type     ExpenseType
+  note     String
+  amount   Decimal
+  carId    String?
+  car      Car?        @relation(fields: [carId], references: [id], onDelete: SetNull)
+  authorId String
+  author   User        @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum EntityType {
   USER
   CLIENT
@@ -236,6 +311,7 @@ enum EntityType {
   DEAL
   PAYMENT
   DOCUMENT
+  EXPENSE
 }
 
 enum AuditAction {
@@ -244,4 +320,10 @@ enum AuditAction {
   DELETE
   LOGIN
   LOGOUT
+}
+
+enum ExpenseType {
+  CAR
+  RENT
+  OTHER
 }
