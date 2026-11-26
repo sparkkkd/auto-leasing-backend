@@ -14,7 +14,7 @@ export class FindAllAuditLogsDto {
   @IsOptional()
   @IsEnum(EntityType, {
     message:
-      'Тип сущности должен быть USER, CLIENT, INVESTOR, CAR, DEAL, PAYMENT или DOCUMENT',
+      'Тип сущности должен быть USER, CLIENT, INVESTOR, CAR, DEAL, PAYMENT, DOCUMENT или EXPENSE',
   })
   entityType?: EntityType;
 

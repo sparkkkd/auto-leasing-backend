@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Auto Leasing API",
-		"description": "API для системы лизинга автомобилей. Все модули: Auth, Users, Clients, Investors, Cars, Deals, Payments, Documents, AuditLog.",
+		"description": "Полная коллекция для тестирования API автолизинга",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -14,13 +14,6 @@
 			}
 		]
 	},
-	"variable": [
-		{
-			"key": "baseUrl",
-			"value": "{{backendUrl}}",
-			"type": "string"
-		}
-	],
 	"item": [
 		{
 			"name": "Auth",
@@ -34,8 +27,17 @@
 								"type": "text/javascript",
 								"exec": [
 									"const response = pm.response.json();",
-									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"if (response.accessToken) {",
 									"    pm.environment.set('accessToken', response.accessToken);",
+									"    console.log('Access token saved');",
+									"}",
+									"if (response.refreshToken) {",
+									"    pm.environment.set('refreshToken', response.refreshToken);",
+									"    console.log('Refresh token saved');",
+									"}",
+									"if (response.user && response.user.id) {",
+									"    pm.environment.set('testUserId', response.user.id);",
+									"    console.log('User ID saved');",
 									"}"
 								]
 							}
@@ -46,15 +48,15 @@
 							"type": "noauth"
 						},
 						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{baseUrl}}/auth/login",
@@ -77,8 +79,9 @@
 								"type": "text/javascript",
 								"exec": [
 									"const response = pm.response.json();",
-									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"if (response.accessToken) {",
 									"    pm.environment.set('accessToken', response.accessToken);",
+									"    console.log('Access token refreshed');",
 									"}"
 								]
 							}
@@ -103,37 +106,7 @@
 					}
 				},
 				{
-					"name": "Get Current User",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/auth/me",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"auth",
-								"me"
-							]
-						}
-					}
-				},
-				{
 					"name": "Logout",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 200 || pm.response.code === 201) {",
-									"    pm.environment.set('accessToken', '');",
-									"}"
-								]
-							}
-						}
-					],
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -171,18 +144,47 @@
 					}
 				},
 				{
+					"name": "Get User By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{testUserId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{testUserId}}"
+							]
+						}
+					}
+				},
+				{
 					"name": "Create User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const response = pm.response.json();",
+									"if (response.id) pm.environment.set('testUserId', response.id);"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"manager@example.com\",\n  \"password\": \"manager123\",\n  \"name\": \"Manager User\",\n  \"role\": \"MANAGER\"\n}"
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Test User\",\n  \"role\": \"MANAGER\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{baseUrl}}/users",
@@ -191,6 +193,49 @@
 							],
 							"path": [
 								"users"
+							]
+						}
+					}
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated User Name\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{testUserId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{testUserId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{testUserId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{testUserId}}"
 							]
 						}
 					}
@@ -206,7 +251,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/clients?page=1&limit=10&search=Иван",
+							"raw": "{{baseUrl}}/clients?page=1&limit=20",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -220,12 +265,44 @@
 								},
 								{
 									"key": "limit",
-									"value": "10"
-								},
-								{
-									"key": "search",
-									"value": "Иван"
+									"value": "20"
 								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Client By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/clients/{{testClientId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"clients",
+								"{{testClientId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Client Payment Schedule",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/clients/{{testClientId}}/payments/schedule",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"clients",
+								"{{testClientId}}",
+								"payments",
+								"schedule"
 							]
 						}
 					}
@@ -238,24 +315,23 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"if (pm.response.code === 201) {",
-									"    pm.environment.set('clientId', pm.response.json().id);",
-									"}"
+									"const response = pm.response.json();",
+									"if (response.id) pm.environment.set('testClientId', response.id);"
 								]
 							}
 						}
 					],
 					"request": {
 						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Иванов\",\n  \"middleName\": \"Иванович\",\n  \"phone\": \"+79991234567\",\n  \"email\": \"ivanov@example.com\",\n  \"passportData\": \"4500 123456, выдан ОВД Тверского района\",\n  \"address\": \"г. Москва, ул. Тверская, д. 1\",\n  \"notes\": \"Тестовый клиент\"\n}"
+							"raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Иванов\",\n  \"middleName\": \"Иванович\",\n  \"phone\": \"+79991234567\",\n  \"email\": \"ivan@example.com\",\n  \"passportData\": \"4510 123456\",\n  \"address\": \"г. Москва, ул. Тестовая, д. 1\",\n  \"comments\": \"Тестовый клиент\",\n  \"notes\": [\"Заметка 1\", \"Заметка 2\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{baseUrl}}/clients",
@@ -269,90 +345,44 @@
 					}
 				},
 				{
-					"name": "Get Client By ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/clients/:id",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"clients",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{clientId}}"
-								}
-							]
-						}
-					}
-				},
-				{
 					"name": "Update Client",
 					"request": {
 						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+79999999999\"\n}"
+							"raw": "{\n  \"comments\": \"Обновленный комментарий\",\n  \"notes\": [\"Новая заметка\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/clients/:id",
+							"raw": "{{baseUrl}}/clients/{{testClientId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"clients",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{clientId}}"
-								}
+								"{{testClientId}}"
 							]
 						}
 					}
 				},
 				{
 					"name": "Delete Client",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 200) pm.environment.unset('clientId');"
-								]
-							}
-						}
-					],
 					"request": {
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/clients/:id",
+							"raw": "{{baseUrl}}/clients/{{testClientId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"clients",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{clientId}}"
-								}
+								"{{testClientId}}"
 							]
 						}
 					}
@@ -367,58 +397,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/investors?page=1&limit=10&type=COMPANY",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"investors"
-							],
-							"query": [
-								{
-									"key": "page",
-									"value": "1"
-								},
-								{
-									"key": "limit",
-									"value": "10"
-								},
-								{
-									"key": "type",
-									"value": "COMPANY"
-								}
-							]
-						}
-					}
-				},
-				{
-					"name": "Create Investor",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 201) {",
-									"    pm.environment.set('investorId', pm.response.json().id);",
-									"}"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"ООО Финанс\",\n  \"type\": \"COMPANY\",\n  \"contactPerson\": \"Петров Петр\",\n  \"phone\": \"+79998887766\",\n  \"email\": \"info@finans.ru\",\n  \"bankDetails\": \"Сбербанк, р/с 40702810000000000000\",\n  \"notes\": \"Основной инвестор\"\n}"
-						},
 						"url": {
 							"raw": "{{baseUrl}}/investors",
 							"host": [
@@ -436,19 +414,50 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/investors/:id",
+							"raw": "{{baseUrl}}/investors/{{testInvestorId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"investors",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{investorId}}"
+								"{{testInvestorId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Investor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const response = pm.response.json();",
+									"if (response.id) pm.environment.set('testInvestorId', response.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Тестовый Инвестор\",\n  \"type\": \"INDIVIDUAL\",\n  \"contactPerson\": \"Петр Петров\",\n  \"phone\": \"+79998887766\",\n  \"email\": \"investor@example.com\",\n  \"bankDetails\": \"Сбербанк, счет 1234567890\",\n  \"comments\": \"Тестовый инвестор\",\n  \"notes\": [\"Заметка 1\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
 								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/investors",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"investors"
 							]
 						}
 					}
@@ -457,64 +466,41 @@
 					"name": "Update Investor",
 					"request": {
 						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+79990001122\"\n}"
+							"raw": "{\n  \"comments\": \"Обновленный комментарий\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/investors/:id",
+							"raw": "{{baseUrl}}/investors/{{testInvestorId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"investors",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{investorId}}"
-								}
+								"{{testInvestorId}}"
 							]
 						}
 					}
 				},
 				{
 					"name": "Delete Investor",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 200) pm.environment.unset('investorId');"
-								]
-							}
-						}
-					],
 					"request": {
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/investors/:id",
+							"raw": "{{baseUrl}}/investors/{{testInvestorId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"investors",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{investorId}}"
-								}
+								"{{testInvestorId}}"
 							]
 						}
 					}
@@ -530,7 +516,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/cars?page=1&limit=10&status=IN_STOCK",
+							"raw": "{{baseUrl}}/cars?page=1&limit=20",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -544,12 +530,43 @@
 								},
 								{
 									"key": "limit",
-									"value": "10"
-								},
-								{
-									"key": "status",
-									"value": "IN_STOCK"
+									"value": "20"
 								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Car By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cars/{{testCarId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cars",
+								"{{testCarId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Car Insurance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cars/{{testCarId}}/insurance",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cars",
+								"{{testCarId}}",
+								"insurance"
 							]
 						}
 					}
@@ -562,24 +579,23 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"if (pm.response.code === 201) {",
-									"    pm.environment.set('carId', pm.response.json().id);",
-									"}"
+									"const response = pm.response.json();",
+									"if (response.id) pm.environment.set('testCarId', response.id);"
 								]
 							}
 						}
 					],
 					"request": {
 						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"year\": 2024,\n  \"vin\": \"JTDBF123456789012\",\n  \"licensePlate\": \"А123БВ777\",\n  \"color\": \"Белый\",\n  \"status\": \"IN_STOCK\",\n  \"purchasePrice\": 2500000,\n  \"sellingPrice\": 2800000\n}"
+							"raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"year\": 2022,\n  \"vin\": \"JTDBE32K120123456\",\n  \"licensePlate\": \"А123БВ777\",\n  \"color\": \"Черный\",\n  \"equipment\": \"Престиж\",\n  \"showroom\": \"Тойота Центр Москва\",\n  \"status\": \"IN_STOCK\",\n  \"purchasePrice\": 2500000,\n  \"sellingPrice\": 2800000,\n  \"comments\": \"Тестовая машина\",\n  \"notes\": [\"Куплена в хорошем состоянии\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{baseUrl}}/cars",
@@ -593,90 +609,44 @@
 					}
 				},
 				{
-					"name": "Get Car By ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/cars/:id",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"cars",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{carId}}"
-								}
-							]
-						}
-					}
-				},
-				{
 					"name": "Update Car",
 					"request": {
 						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"status\": \"RESERVED\"\n}"
+							"raw": "{\n  \"comments\": \"Обновленный комментарий\",\n  \"notes\": [\"Новая заметка\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/cars/:id",
+							"raw": "{{baseUrl}}/cars/{{testCarId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"cars",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{carId}}"
-								}
+								"{{testCarId}}"
 							]
 						}
 					}
 				},
 				{
 					"name": "Delete Car",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 200) pm.environment.unset('carId');"
-								]
-							}
-						}
-					],
 					"request": {
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/cars/:id",
+							"raw": "{{baseUrl}}/cars/{{testCarId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"cars",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{carId}}"
-								}
+								"{{testCarId}}"
 							]
 						}
 					}
@@ -692,7 +662,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/deals?page=1&limit=10&status=ACTIVE",
+							"raw": "{{baseUrl}}/deals?page=1&limit=20",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -706,12 +676,42 @@
 								},
 								{
 									"key": "limit",
-									"value": "10"
-								},
-								{
-									"key": "status",
-									"value": "ACTIVE"
+									"value": "20"
 								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Deal By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/deals/{{testDealId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"deals",
+								"{{testDealId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Overdue Payments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/deals/overdue",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"deals",
+								"overdue"
 							]
 						}
 					}
@@ -724,24 +724,23 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"if (pm.response.code === 201) {",
-									"    pm.environment.set('dealId', pm.response.json().id);",
-									"}"
+									"const response = pm.response.json();",
+									"if (response.id) pm.environment.set('testDealId', response.id);"
 								]
 							}
 						}
 					],
 					"request": {
 						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"clientId\": \"{{clientId}}\",\n  \"carId\": \"{{carId}}\",\n  \"investorId\": \"{{investorId}}\",\n  \"contractNumber\": \"LEASE-2026-000001\",\n  \"startDate\": \"2026-11-22T00:00:00.000Z\",\n  \"endDate\": \"2028-11-22T00:00:00.000Z\",\n  \"clientTotalAmount\": 2800000,\n  \"investorTotalAmount\": 2500000,\n  \"status\": \"ACTIVE\",\n  \"notes\": \"Лизинг Toyota Camry на 2 года\"\n}"
+							"raw": "{\n  \"contractNumber\": \"ДОГ-2026-001\",\n  \"startDate\": \"2026-01-15T00:00:00.000Z\",\n  \"endDate\": \"2027-01-15T00:00:00.000Z\",\n  \"term\": 12,\n  \"firstPayment\": 500000,\n  \"monthlyPayment\": 50000,\n  \"finalCarPrice\": 2800000,\n  \"clientTotalAmount\": 3100000,\n  \"investorTotalAmount\": 2500000,\n  \"status\": \"ACTIVE\",\n  \"clientId\": \"{{testClientId}}\",\n  \"investorId\": \"{{testInvestorId}}\",\n  \"carId\": \"{{testCarId}}\",\n  \"comments\": \"Тестовая сделка\",\n  \"notes\": [\"Заметка 1\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{baseUrl}}/deals",
@@ -755,90 +754,70 @@
 					}
 				},
 				{
-					"name": "Get Deal By ID",
+					"name": "Update Deal",
 					"request": {
-						"method": "GET",
+						"method": "PATCH",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"comments\": \"Обновленный комментарий\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "{{baseUrl}}/deals/:id",
+							"raw": "{{baseUrl}}/deals/{{testDealId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"deals",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{dealId}}"
-								}
+								"{{testDealId}}"
 							]
 						}
 					}
 				},
 				{
-					"name": "Update Deal",
+					"name": "Update Deal Status to TERMINATED",
 					"request": {
 						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"notes\": \"Обновленные заметки по сделке\"\n}"
+							"raw": "{\n  \"status\": \"TERMINATED\",\n  \"comments\": \"Сделка расторгнута\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/deals/:id",
+							"raw": "{{baseUrl}}/deals/{{testDealId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"deals",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{dealId}}"
-								}
+								"{{testDealId}}"
 							]
 						}
 					}
 				},
 				{
 					"name": "Delete Deal",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 200) pm.environment.unset('dealId');"
-								]
-							}
-						}
-					],
 					"request": {
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/deals/:id",
+							"raw": "{{baseUrl}}/deals/{{testDealId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"deals",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{dealId}}"
-								}
+								"{{testDealId}}"
 							]
 						}
 					}
@@ -853,62 +832,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/payments?dealId={{dealId}}&direction=CLIENT_TO_COMPANY&page=1&limit=10",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"payments"
-							],
-							"query": [
-								{
-									"key": "dealId",
-									"value": "{{dealId}}"
-								},
-								{
-									"key": "direction",
-									"value": "CLIENT_TO_COMPANY"
-								},
-								{
-									"key": "page",
-									"value": "1"
-								},
-								{
-									"key": "limit",
-									"value": "10"
-								}
-							]
-						}
-					}
-				},
-				{
-					"name": "Create Payment (CLIENT_TO_COMPANY)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 201) {",
-									"    pm.environment.set('paymentId', pm.response.json().id);",
-									"}"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"dealId\": \"{{dealId}}\",\n  \"direction\": \"CLIENT_TO_COMPANY\",\n  \"amount\": 50000,\n  \"paidAt\": \"2026-11-22T00:00:00.000Z\",\n  \"comment\": \"Ежемесячный платеж за ноябрь\"\n}"
-						},
 						"url": {
 							"raw": "{{baseUrl}}/payments",
 							"host": [
@@ -926,19 +849,50 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/payments/:id",
+							"raw": "{{baseUrl}}/payments/{{testPaymentId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"payments",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{paymentId}}"
+								"{{testPaymentId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const response = pm.response.json();",
+									"if (response.id) pm.environment.set('testPaymentId', response.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"direction\": \"CLIENT_TO_COMPANY\",\n  \"amount\": 50000,\n  \"paymentDate\": \"2026-02-15T00:00:00.000Z\",\n  \"description\": \"Ежемесячный платеж за февраль\",\n  \"dealId\": \"{{testDealId}}\",\n  \"comments\": \"Платеж получен\",\n  \"notes\": [\"Оплачен вовремя\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
 								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payments"
 							]
 						}
 					}
@@ -947,64 +901,41 @@
 					"name": "Update Payment",
 					"request": {
 						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"amount\": 55000,\n  \"comment\": \"Исправленная сумма платежа\"\n}"
+							"raw": "{\n  \"comments\": \"Обновленный комментарий\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/payments/:id",
+							"raw": "{{baseUrl}}/payments/{{testPaymentId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"payments",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{paymentId}}"
-								}
+								"{{testPaymentId}}"
 							]
 						}
 					}
 				},
 				{
 					"name": "Delete Payment",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 200) pm.environment.unset('paymentId');"
-								]
-							}
-						}
-					],
 					"request": {
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/payments/:id",
+							"raw": "{{baseUrl}}/payments/{{testPaymentId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"payments",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{paymentId}}"
-								}
+								"{{testPaymentId}}"
 							]
 						}
 					}
@@ -1020,131 +951,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/documents?paymentId={{paymentId}}&type=PAYMENT_RECEIPT&page=1&limit=10",
+							"raw": "{{baseUrl}}/documents",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"documents"
-							],
-							"query": [
-								{
-									"key": "paymentId",
-									"value": "{{paymentId}}"
-								},
-								{
-									"key": "type",
-									"value": "PAYMENT_RECEIPT"
-								},
-								{
-									"key": "page",
-									"value": "1"
-								},
-								{
-									"key": "limit",
-									"value": "10"
-								}
-							]
-						}
-					}
-				},
-				{
-					"name": "Upload Document (to payment)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 201) {",
-									"    pm.environment.set('documentId', pm.response.json().id);",
-									"}"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "file",
-									"type": "file",
-									"src": ""
-								}
-							]
-						},
-						"url": {
-							"raw": "{{baseUrl}}/documents/upload?paymentId={{paymentId}}&type=PAYMENT_RECEIPT",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"documents",
-								"upload"
-							],
-							"query": [
-								{
-									"key": "paymentId",
-									"value": "{{paymentId}}"
-								},
-								{
-									"key": "type",
-									"value": "PAYMENT_RECEIPT"
-								}
-							]
-						},
-						"description": "⚠️ В поле 'file' выбери тип File и укажи путь к PDF/JPG/PNG файлу. Максимум 10 MB."
-					}
-				},
-				{
-					"name": "Upload Document (to deal)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"if (pm.response.code === 201) {",
-									"    pm.environment.set('dealDocumentId', pm.response.json().id);",
-									"}"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "file",
-									"type": "file",
-									"src": ""
-								}
-							]
-						},
-						"url": {
-							"raw": "{{baseUrl}}/documents/upload?dealId={{dealId}}&type=CONTRACT_SCAN",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"documents",
-								"upload"
-							],
-							"query": [
-								{
-									"key": "dealId",
-									"value": "{{dealId}}"
-								},
-								{
-									"key": "type",
-									"value": "CONTRACT_SCAN"
-								}
 							]
 						}
 					}
@@ -1155,77 +967,340 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/documents/:id",
+							"raw": "{{baseUrl}}/documents/{{testDocumentId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"documents",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "{{documentId}}"
-								}
+								"{{testDocumentId}}"
 							]
 						}
 					}
 				},
 				{
-					"name": "Download Document",
+					"name": "Get Expiring Insurance (Global)",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/documents/:id/download",
+							"raw": "{{baseUrl}}/documents/insurance/expiring?days=7",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"documents",
-								":id",
-								"download"
+								"insurance",
+								"expiring"
 							],
-							"variable": [
+							"query": [
 								{
-									"key": "id",
-									"value": "{{documentId}}"
+									"key": "days",
+									"value": "7"
 								}
 							]
 						}
 					}
 				},
 				{
-					"name": "Delete Document",
+					"name": "Create Document",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"if (pm.response.code === 200) pm.environment.unset('documentId');"
+									"const response = pm.response.json();",
+									"if (response.id) pm.environment.set('testDocumentId', response.id);"
 								]
 							}
 						}
 					],
 					"request": {
-						"method": "DELETE",
+						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fileName\": \"insurance_2026.pdf\",\n  \"originalName\": \"Страховка_2026.pdf\",\n  \"mimeType\": \"application/pdf\",\n  \"size\": 1024000,\n  \"storagePath\": \"/uploads/documents/insurance_2026.pdf\",\n  \"type\": \"INSURANCE\",\n  \"carId\": \"{{testCarId}}\",\n  \"expiresAt\": \"2026-12-31T00:00:00.000Z\",\n  \"comments\": \"Страховка на год\",\n  \"notes\": [\"ОСАГО + КАСКО\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "{{baseUrl}}/documents/:id",
+							"raw": "{{baseUrl}}/documents",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents"
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Document",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"comments\": \"Обновленный комментарий\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/documents/{{testDocumentId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"documents",
-								":id"
+								"{{testDocumentId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Document",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/documents/{{testDocumentId}}",
+							"host": [
+								"{{baseUrl}}"
 							],
-							"variable": [
+							"path": [
+								"documents",
+								"{{testDocumentId}}"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Expenses",
+			"item": [
+				{
+					"name": "Get All Expenses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/expenses?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expenses"
+							],
+							"query": [
 								{
-									"key": "id",
-									"value": "{{documentId}}"
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
 								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Expenses by Car",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/expenses?carId={{testCarId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expenses"
+							],
+							"query": [
+								{
+									"key": "carId",
+									"value": "{{testCarId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Expenses by Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/expenses?type=CAR",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expenses"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "CAR",
+									"description": "CAR, RENT, OTHER"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Expense By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/expenses/{{testExpenseId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expenses",
+								"{{testExpenseId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Expense (CAR)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const response = pm.response.json();",
+									"if (response.id) pm.environment.set('testExpenseId', response.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"CAR\",\n  \"note\": \"Оплата страховки ОСАГО\",\n  \"amount\": 15000,\n  \"carId\": \"{{testCarId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/expenses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expenses"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Expense (RENT)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"RENT\",\n  \"note\": \"Аренда офиса за ноябрь\",\n  \"amount\": 50000\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/expenses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expenses"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Expense (OTHER)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"OTHER\",\n  \"note\": \"Канцелярские товары\",\n  \"amount\": 5000\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/expenses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expenses"
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Expense",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"note\": \"Обновленное описание расхода\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/expenses/{{testExpenseId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expenses",
+								"{{testExpenseId}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Expense",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/expenses/{{testExpenseId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expenses",
+								"{{testExpenseId}}"
 							]
 						}
 					}
@@ -1237,39 +1312,11 @@
 			"item": [
 				{
 					"name": "Get All Audit Logs",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"pm.test('Status code is 200', () => pm.expect(pm.response.code).to.equal(200));",
-									"const res = pm.response.json();",
-									"pm.test('Has data array and total', () => {",
-									"    pm.expect(res).to.have.property('data').that.is.an('array');",
-									"    pm.expect(res).to.have.property('total').that.is.a('number');",
-									"});",
-									"pm.test('Logs have required fields', () => {",
-									"    if (res.data.length > 0) {",
-									"        const log = res.data[0];",
-									"        pm.expect(log).to.have.property('id');",
-									"        pm.expect(log).to.have.property('action');",
-									"        pm.expect(log).to.have.property('entityType');",
-									"        pm.expect(log).to.have.property('entityId');",
-									"        pm.expect(log).to.have.property('createdAt');",
-									"        pm.expect(log).to.have.property('user');",
-									"    }",
-									"});",
-									"console.log('📊 Total audit logs:', res.total);"
-								]
-							}
-						}
-					],
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/audit-logs?page=1&limit=50",
+							"raw": "{{baseUrl}}/audit-logs?page=1&limit=20",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1277,37 +1324,6 @@
 								"audit-logs"
 							],
 							"query": [
-								{
-									"key": "page",
-									"value": "1"
-								},
-								{
-									"key": "limit",
-									"value": "50"
-								}
-							]
-						},
-						"description": "Получение всех логов аудита. Требует роль ADMIN. Возвращает список с информацией о пользователе, действии, сущности и изменениях."
-					}
-				},
-				{
-					"name": "Get Audit Logs by User",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/audit-logs?userId={{currentUserId}}&page=1&limit=20",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"audit-logs"
-							],
-							"query": [
-								{
-									"key": "userId",
-									"value": "{{currentUserId}}"
-								},
 								{
 									"key": "page",
 									"value": "1"
@@ -1317,8 +1333,7 @@
 									"value": "20"
 								}
 							]
-						},
-						"description": "Фильтр по пользователю. Покажет все действия конкретного пользователя."
+						}
 					}
 				},
 				{
@@ -1327,7 +1342,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/audit-logs?entityType=CLIENT&page=1&limit=20",
+							"raw": "{{baseUrl}}/audit-logs?entityType=CAR&page=1&limit=20",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1337,7 +1352,8 @@
 							"query": [
 								{
 									"key": "entityType",
-									"value": "CLIENT"
+									"value": "CAR",
+									"description": "USER, CLIENT, INVESTOR, CAR, DEAL, PAYMENT, DOCUMENT, EXPENSE"
 								},
 								{
 									"key": "page",
@@ -1348,8 +1364,7 @@
 									"value": "20"
 								}
 							]
-						},
-						"description": "Фильтр по типу сущности. Варианты: USER, CLIENT, INVESTOR, CAR, DEAL, PAYMENT, DOCUMENT."
+						}
 					}
 				},
 				{
@@ -1368,7 +1383,8 @@
 							"query": [
 								{
 									"key": "action",
-									"value": "CREATE"
+									"value": "CREATE",
+									"description": "CREATE, UPDATE, DELETE, LOGIN, LOGOUT"
 								},
 								{
 									"key": "page",
@@ -1379,17 +1395,16 @@
 									"value": "20"
 								}
 							]
-						},
-						"description": "Фильтр по действию. Варианты: CREATE, UPDATE, DELETE, LOGIN, LOGOUT."
+						}
 					}
 				},
 				{
-					"name": "Get Audit Logs by Date Range",
+					"name": "Get Audit Logs by User",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/audit-logs?dateFrom=2026-11-01T00:00:00.000Z&dateTo=2026-11-30T23:59:59.000Z",
+							"raw": "{{baseUrl}}/audit-logs?userId={{testUserId}}&page=1&limit=20",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1398,25 +1413,28 @@
 							],
 							"query": [
 								{
-									"key": "dateFrom",
-									"value": "2026-11-01T00:00:00.000Z"
+									"key": "userId",
+									"value": "{{testUserId}}"
 								},
 								{
-									"key": "dateTo",
-									"value": "2026-11-30T23:59:59.000Z"
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
 								}
 							]
-						},
-						"description": "Фильтр по диапазону дат. Полезно для отчетов за период."
+						}
 					}
 				},
 				{
-					"name": "Get Audit Logs for Specific Entity",
+					"name": "Get Audit Logs by Entity ID",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/audit-logs?entityId={{clientId}}&entityType=CLIENT",
+							"raw": "{{baseUrl}}/audit-logs?entityId={{testCarId}}&page=1&limit=20",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1426,19 +1444,72 @@
 							"query": [
 								{
 									"key": "entityId",
-									"value": "{{clientId}}"
+									"value": "{{testCarId}}"
 								},
 								{
-									"key": "entityType",
-									"value": "CLIENT"
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
 								}
 							]
-						},
-						"description": "Получить всю историю изменений конкретной сущности (например, все действия с конкретным клиентом)."
+						}
+					}
+				},
+				{
+					"name": "Get Audit Logs by Date Range",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs?dateFrom=2026-01-01&dateTo=2026-12-31&page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "dateFrom",
+									"value": "2026-01-01"
+								},
+								{
+									"key": "dateTo",
+									"value": "2026-12-31"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Audit Log By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs/REPLACE_WITH_LOG_ID",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs",
+								"REPLACE_WITH_LOG_ID"
+							]
+						}
 					}
 				}
-			],
-			"description": "Логи аудита действий пользователей. Только для ADMIN. Логи создаются автоматически для всех POST/PATCH/DELETE запросов, а также для LOGIN/LOGOUT."
+			]
 		}
 	]
 }
