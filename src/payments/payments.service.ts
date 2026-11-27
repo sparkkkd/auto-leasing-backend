@@ -6,12 +6,16 @@ import {
 import { Prisma } from '@prisma/client';
 import { CreatePaymentDto, UpdatePaymentDto, FindAllPaymentsDto } from './dto';
 import { PrismaService } from 'prisma/prisma.service';
+import { PaginatedResponse } from 'src/common/types/paginated-response.type';
+import { PaymentResponse, PaymentsListResponse } from './payments.types';
 
 @Injectable()
 export class PaymentsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query: FindAllPaymentsDto) {
+  async findAll(
+    query: FindAllPaymentsDto,
+  ): Promise<PaginatedResponse<PaymentsListResponse>> {
     const { dealId, direction, dateFrom, dateTo, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
@@ -41,29 +45,57 @@ export class PaymentsService {
         skip,
         take: limit,
         orderBy: { paymentDate: 'desc' },
-        include: {
+        select: {
+          id: true,
+          direction: true,
+          amount: true,
+          paymentDate: true,
+          comments: true,
+
+          createdAt: true,
+
           deal: {
             select: {
               id: true,
               contractNumber: true,
-              client: { select: { firstName: true, lastName: true } },
-              investor: { select: { name: true } },
-              car: { select: { make: true, model: true, vin: true } },
+
+              client: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  middleName: true,
+                },
+              },
+
+              investor: {
+                select: {
+                  id: true,
+                  name: true,
+                  type: true,
+                },
+              },
+
+              car: {
+                select: {
+                  id: true,
+                  make: true,
+                  model: true,
+                  color: true,
+                  year: true,
+                  licensePlate: true,
+                  vin: true,
+                },
+              },
             },
           },
-          _count: { select: { documents: true } },
         },
       }),
       this.prisma.payment.count({ where }),
     ]);
 
-    const data = payments.map((payment) => ({
-      ...payment,
-      amount: Number(payment.amount),
-    }));
-
     return {
-      data,
+      data: payments,
       total,
       page,
       limit,
@@ -71,21 +103,62 @@ export class PaymentsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<PaymentResponse> {
     const payment = await this.prisma.payment.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        direction: true,
+        amount: true,
+        paymentDate: true,
+        comments: true,
+        notes: true,
+
+        createdAt: true,
+        updatedAt: true,
+
         deal: {
           select: {
             id: true,
             contractNumber: true,
-            client: true,
-            investor: true,
-            car: true,
+            comments: true,
+
+            client: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                middleName: true,
+                phone: true,
+                email: true,
+                comments: true,
+              },
+            },
+
+            investor: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+              },
+            },
+
+            car: {
+              select: {
+                id: true,
+                make: true,
+                model: true,
+                color: true,
+                year: true,
+                licensePlate: true,
+                vin: true,
+                equipment: true,
+                showroom: true,
+                purchasePrice: true,
+                sellingPrice: true,
+              },
+            },
           },
-        },
-        documents: {
-          orderBy: { createdAt: 'desc' },
         },
       },
     });
@@ -94,10 +167,7 @@ export class PaymentsService {
       throw new NotFoundException('Платеж не найден');
     }
 
-    return {
-      ...payment,
-      amount: Number(payment.amount),
-    };
+    return payment;
   }
 
   async create(createPaymentDto: CreatePaymentDto) {

@@ -292,7 +292,7 @@ model AuditLog {
 model Expense {
   id       String      @id @default(cuid())
   type     ExpenseType
-  comment  String?
+  comments String?
   notes    String[]    @default([])
   amount   Decimal
   carId    String?

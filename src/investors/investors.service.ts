@@ -11,12 +11,16 @@ import {
   FindAllInvestorsDto,
 } from './dto';
 import { PrismaService } from 'prisma/prisma.service';
+import { PaginatedResponse } from 'src/common/types/paginated-response.type';
+import { InvestorListResponse, InvestorResponse } from './investors.type';
 
 @Injectable()
 export class InvestorsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query: FindAllInvestorsDto) {
+  async findAll(
+    query: FindAllInvestorsDto,
+  ): Promise<PaginatedResponse<InvestorListResponse>> {
     const { search, type, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
@@ -50,6 +54,17 @@ export class InvestorsService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          contactPerson: true,
+          phone: true,
+          bankDetails: true,
+          comments: true,
+          createdAt: true,
+          _count: { select: { deals: true } },
+        },
       }),
       this.prisma.investor.count({ where }),
     ]);
@@ -63,17 +78,32 @@ export class InvestorsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<InvestorResponse> {
     const investor = await this.prisma.investor.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        contactPerson: true,
+        phone: true,
+        email: true,
+        bankDetails: true,
+        comments: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
+
         deals: {
-          include: {
-            client: true,
-            car: true,
-          },
           orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            contractNumber: true,
+            status: true,
+          },
         },
+
+        _count: { select: { deals: true } },
       },
     });
 

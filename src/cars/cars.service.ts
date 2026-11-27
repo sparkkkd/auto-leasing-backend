@@ -7,12 +7,16 @@ import {
 import { Prisma } from '@prisma/client';
 import { CreateCarDto, UpdateCarDto, FindAllCarsDto } from './dto';
 import { PrismaService } from 'prisma/prisma.service';
+import { PaginatedResponse } from 'src/common/types/paginated-response.type';
+import { CarResponse, CarsListResponse } from './cars.types';
 
 @Injectable()
 export class CarsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query: FindAllCarsDto) {
+  async findAll(
+    query: FindAllCarsDto,
+  ): Promise<PaginatedResponse<CarsListResponse>> {
     const { search, status, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
@@ -47,11 +51,33 @@ export class CarsService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: {
+        select: {
+          id: true,
+          make: true,
+          model: true,
+          year: true,
+          color: true,
+          equipment: true,
+          licensePlate: true,
+          vin: true,
+          purchasePrice: true,
+          sellingPrice: true,
+          status: true,
+          createdAt: true,
+
+          client: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              middleName: true,
+            },
+          },
+
           deals: {
-            include: {
-              client: true,
-              investor: true,
+            select: {
+              id: true,
+              contractNumber: true,
             },
           },
         },
@@ -68,15 +94,32 @@ export class CarsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<CarResponse> {
     const car = await this.prisma.car.findUnique({
       where: { id },
       include: {
         deals: {
-          include: {
-            client: true,
-            investor: true,
-            payments: true,
+          select: {
+            id: true,
+            contractNumber: true,
+            startDate: true,
+            endDate: true,
+            term: true,
+            firstPayment: true,
+            monthlyPayment: true,
+            finalCarPrice: true,
+            clientTotalAmount: true,
+            investorTotalAmount: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+        client: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            middleName: true,
           },
         },
       },

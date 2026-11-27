@@ -7,12 +7,16 @@ import {
 import { Prisma } from '@prisma/client';
 import { CreateClientDto, UpdateClientDto, FindAllClientsDto } from './dto';
 import { PrismaService } from 'prisma/prisma.service';
+import { PaginatedResponse } from 'src/common/types/paginated-response.type';
+import { ClientResponse, ClientsListResponse } from './clients.types';
 
 @Injectable()
 export class ClientsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query: FindAllClientsDto) {
+  async findAll(
+    query: FindAllClientsDto,
+  ): Promise<PaginatedResponse<ClientsListResponse>> {
     const { search, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
@@ -45,6 +49,35 @@ export class ClientsService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          middleName: true,
+          phone: true,
+
+          deals: {
+            select: {
+              id: true,
+              contractNumber: true,
+              status: true,
+            },
+          },
+
+          cars: {
+            select: {
+              id: true,
+              model: true,
+              make: true,
+              color: true,
+              licensePlate: true,
+              vin: true,
+              equipment: true,
+            },
+          },
+
+          _count: { select: { deals: true, cars: true } },
+        },
       }),
       this.prisma.client.count({ where }),
     ]);
@@ -58,17 +91,46 @@ export class ClientsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<ClientResponse> {
     const client = await this.prisma.client.findUnique({
       where: { id },
       include: {
         deals: {
-          include: {
-            car: true,
-            investor: true,
+          select: {
+            id: true,
+            contractNumber: true,
+            startDate: true,
+            endDate: true,
+            createdAt: true,
+            status: true,
+            car: {
+              select: {
+                id: true,
+                make: true,
+                model: true,
+                color: true,
+                year: true,
+                equipment: true,
+                licensePlate: true,
+                vin: true,
+              },
+            },
           },
           orderBy: { createdAt: 'desc' },
         },
+        cars: {
+          select: {
+            id: true,
+            make: true,
+            model: true,
+            year: true,
+            color: true,
+            licensePlate: true,
+            vin: true,
+            equipment: true,
+          },
+        },
+        _count: { select: { deals: true, cars: true } },
       },
     });
 

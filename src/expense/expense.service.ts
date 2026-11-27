@@ -9,6 +9,8 @@ import { UpdateExpenseDto } from './dto/update-expense.dto';
 
 import { ExpenseType } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
+import { ExpenseResponse } from './expense.types';
+import { PaginatedResponse } from 'src/common/types/paginated-response.type';
 
 @Injectable()
 export class ExpenseService {
@@ -49,7 +51,7 @@ export class ExpenseService {
     type?: ExpenseType;
     page?: number;
     limit?: number;
-  }) {
+  }): Promise<PaginatedResponse<ExpenseResponse>> {
     const { carId, type, page = 1, limit = 20 } = params || {};
     const skip = (page - 1) * limit;
 
@@ -62,9 +64,36 @@ export class ExpenseService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: {
-          car: { select: { id: true, make: true, model: true } },
-          author: { select: { id: true, name: true } },
+        select: {
+          id: true,
+          type: true,
+          amount: true,
+          comments: true,
+          notes: true,
+
+          createdAt: true,
+          updatedAt: true,
+
+          car: {
+            select: {
+              id: true,
+              make: true,
+              model: true,
+              year: true,
+              vin: true,
+              licensePlate: true,
+              color: true,
+              status: true,
+            },
+          },
+
+          author: {
+            select: {
+              id: true,
+              name: true,
+              role: true,
+            },
+          },
         },
       }),
       this.prisma.expense.count({
@@ -75,15 +104,48 @@ export class ExpenseService {
       }),
     ]);
 
-    return { items, total, page, limit };
+    return {
+      data: items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<ExpenseResponse> {
     const expense = await this.prisma.expense.findUnique({
       where: { id },
-      include: {
-        car: true,
-        author: { select: { id: true, name: true, email: true } },
+      select: {
+        id: true,
+        type: true,
+        amount: true,
+        comments: true,
+        notes: true,
+
+        createdAt: true,
+        updatedAt: true,
+
+        car: {
+          select: {
+            id: true,
+            make: true,
+            model: true,
+            year: true,
+            vin: true,
+            licensePlate: true,
+            color: true,
+            status: true,
+          },
+        },
+
+        author: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+          },
+        },
       },
     });
 

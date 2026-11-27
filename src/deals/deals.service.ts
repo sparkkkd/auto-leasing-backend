@@ -19,12 +19,16 @@ import {
   PaymentScheduleDto,
   PaymentScheduleItem,
 } from './dto/payment-schedule.dto';
+import { PaginatedResponse } from 'src/common/types/paginated-response.type';
+import { DealResponse, DealsListResponse } from './deals.types';
 
 @Injectable()
 export class DealsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query: FindAllDealsDto) {
+  async findAll(
+    query: FindAllDealsDto,
+  ): Promise<PaginatedResponse<DealsListResponse>> {
     const {
       search,
       clientId,
@@ -78,7 +82,18 @@ export class DealsService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: {
+        select: {
+          id: true,
+          contractNumber: true,
+          startDate: true,
+          endDate: true,
+          term: true,
+          monthlyPayment: true,
+          finalCarPrice: true,
+          clientTotalAmount: true,
+          investorTotalAmount: true,
+          status: true,
+          createdAt: true,
           client: {
             select: { id: true, firstName: true, lastName: true, phone: true },
           },
@@ -108,17 +123,75 @@ export class DealsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<DealResponse> {
     const deal = await this.prisma.deal.findUnique({
       where: { id },
-      include: {
-        client: true,
-        investor: true,
-        car: true,
+      select: {
+        id: true,
+        contractNumber: true,
+        startDate: true,
+        endDate: true,
+        term: true,
+        firstPayment: true,
+        monthlyPayment: true,
+        finalCarPrice: true,
+        clientTotalAmount: true,
+        investorTotalAmount: true,
+        status: true,
+        comments: true,
+        notes: true,
+        contractScanId: true,
+        investorContractScanId: true,
+        createdAt: true,
+        updatedAt: true,
+
+        client: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            middleName: true,
+            phone: true,
+            passportData: true,
+            address: true,
+            comments: true,
+          },
+        },
+        car: {
+          select: {
+            id: true,
+            make: true,
+            model: true,
+            year: true,
+            vin: true,
+            licensePlate: true,
+            color: true,
+            equipment: true,
+            showroom: true,
+            purchasePrice: true,
+            sellingPrice: true,
+          },
+        },
+        investor: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            contactPerson: true,
+            phone: true,
+            bankDetails: true,
+            comments: true,
+          },
+        },
+
         payments: {
           orderBy: { paymentDate: 'desc' },
-          include: {
-            documents: true,
+          select: {
+            id: true,
+            direction: true,
+            amount: true,
+            paymentDate: true,
+            comments: true,
           },
         },
       },
@@ -236,7 +309,7 @@ export class DealsService {
 
       await tx.car.update({
         where: { id: createDealDto.carId },
-        data: { status: CarStatus.IN_WORK },
+        data: { status: CarStatus.IN_WORK, clientId: createDealDto.clientId },
       });
 
       return newDeal;
@@ -305,7 +378,7 @@ export class DealsService {
 
         await tx.car.update({
           where: { id: deal.carId },
-          data: { status: CarStatus.IN_STOCK },
+          data: { status: CarStatus.IN_STOCK, clientId: null },
         });
 
         return updatedDeal;
@@ -348,7 +421,7 @@ export class DealsService {
 
       await tx.car.update({
         where: { id: deal.carId },
-        data: { status: CarStatus.IN_STOCK },
+        data: { status: CarStatus.IN_STOCK, clientId: null },
       });
     });
 
