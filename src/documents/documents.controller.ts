@@ -10,10 +10,12 @@ import {
   UploadedFile,
   BadRequestException,
   Res,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { DocumentsService } from './documents.service';
-import { FindAllDocumentsDto } from './dto';
+import { FindAllDocumentsDto, UploadDocumentDto } from './dto';
 import { DocumentType, UserRole } from '@prisma/client';
 import { RolesGuard } from 'src/auth/guards';
 import { Roles } from 'src/auth/decorators';
@@ -34,6 +36,7 @@ export class DocumentsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @UseInterceptors(
     FileInterceptor('file', {
+      storage: memoryStorage(),
       limits: {
         fileSize: 10 * 1024 * 1024, // 10 MB
       },
@@ -59,28 +62,22 @@ export class DocumentsController {
   )
   upload(
     @UploadedFile() file: UploadedFileDocument,
-    @Query('paymentId') paymentId?: string,
-    @Query('dealId') dealId?: string,
-    @Query('type') type?: string,
+    @Body() uploadDocumentDto: UploadDocumentDto,
   ) {
     if (!file) {
       throw new BadRequestException('Файл не был загружен');
     }
 
-    const validTypes: DocumentType[] = [
-      'CLIENT_DOCUMENT',
-      'INVESTOR_DOCUMENT',
-      'CONTRACT_SCAN',
-      'PAYMENT_RECEIPT',
-      'OTHER',
-    ];
+    return this.documentsService.upload(file, uploadDocumentDto);
+  }
 
-    const documentType: DocumentType =
-      type && validTypes.includes(type as DocumentType)
-        ? (type as DocumentType)
-        : 'OTHER';
-
-    return this.documentsService.upload(file, paymentId, dealId, documentType);
+  @Get('insurance/expiring')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER)
+  getExpiringInsurance(
+    @Query('days') days?: string,
+  ): Promise<ExpiringInsuranceDto[]> {
+    const daysThreshold = days ? Number(days) : 7;
+    return this.documentsService.getExpiringInsurance(daysThreshold);
   }
 
   @Get()
@@ -114,14 +111,5 @@ export class DocumentsController {
   @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string) {
     return this.documentsService.remove(id);
-  }
-
-  @Get('insurance/expiring')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER)
-  getExpiringInsurance(
-    @Query('days') days?: string,
-  ): Promise<ExpiringInsuranceDto[]> {
-    const daysThreshold = days ? Number(days) : 7;
-    return this.documentsService.getExpiringInsurance(daysThreshold);
   }
 }

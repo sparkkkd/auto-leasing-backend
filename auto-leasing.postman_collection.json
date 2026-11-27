@@ -1003,7 +1003,7 @@
 					}
 				},
 				{
-					"name": "Create Document",
+					"name": "Upload Document (Insurance)",
 					"event": [
 						{
 							"listen": "test",
@@ -1011,7 +1011,10 @@
 								"type": "text/javascript",
 								"exec": [
 									"const response = pm.response.json();",
-									"if (response.id) pm.environment.set('testDocumentId', response.id);"
+									"if (response.id) {",
+									"    pm.environment.set('testDocumentId', response.id);",
+									"    console.log('Document ID saved:', response.id);",
+									"}"
 								]
 							}
 						}
@@ -1020,24 +1023,69 @@
 						"method": "POST",
 						"header": [],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"fileName\": \"insurance_2026.pdf\",\n  \"originalName\": \"Страховка_2026.pdf\",\n  \"mimeType\": \"application/pdf\",\n  \"size\": 1024000,\n  \"storagePath\": \"/uploads/documents/insurance_2026.pdf\",\n  \"type\": \"INSURANCE\",\n  \"carId\": \"{{testCarId}}\",\n  \"expiresAt\": \"2026-12-31T00:00:00.000Z\",\n  \"comments\": \"Страховка на год\",\n  \"notes\": [\"ОСАГО + КАСКО\"]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": [],
+									"description": "Выберите реальный PDF или JPG файл с компьютера"
+								},
+								{
+									"key": "type",
+									"value": "INSURANCE",
+									"type": "text"
+								},
+								{
+									"key": "carId",
+									"value": "{{testCarId}}",
+									"type": "text"
+								},
+								{
+									"key": "expiresAt",
+									"value": "2026-12-31T00:00:00.000Z",
+									"type": "text"
+								},
+								{
+									"key": "comments",
+									"value": "Тестовая страховка через upload",
+									"type": "text"
 								}
-							}
+							]
 						},
 						"url": {
-							"raw": "{{baseUrl}}/documents",
+							"raw": "{{baseUrl}}/documents/upload",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
-								"documents"
+								"documents",
+								"upload"
 							]
 						}
-					}
+					},
+					"response": []
+				},
+				{
+					"name": "Download Document",
+					"event": [],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/documents/{{testDocumentId}}/download",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents",
+								"{{testDocumentId}}",
+								"download"
+							]
+						},
+						"description": "Скачать файл документа. Ответ — бинарные данные (PDF/JPG/PNG)."
+					},
+					"response": []
 				},
 				{
 					"name": "Update Document",

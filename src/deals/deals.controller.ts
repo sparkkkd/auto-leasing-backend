@@ -21,6 +21,12 @@ import { OverduePaymentDto } from './dto/overdue-payment.dto';
 export class DealsController {
   constructor(private readonly dealsService: DealsService) {}
 
+  @Get('overdue')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER)
+  getOverduePayments(): Promise<OverduePaymentDto[]> {
+    return this.dealsService.getOverduePayments();
+  }
+
   @Get()
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER)
   findAll(@Query() query: FindAllDealsDto) {
@@ -49,11 +55,5 @@ export class DealsController {
   @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string) {
     return this.dealsService.remove(id);
-  }
-
-  @Get('overdue')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER)
-  getOverduePayments(): Promise<OverduePaymentDto[]> {
-    return this.dealsService.getOverduePayments();
   }
 }

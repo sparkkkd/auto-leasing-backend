@@ -8,7 +8,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
-import { FindAllDocumentsDto } from './dto';
+import { FindAllDocumentsDto, UploadDocumentDto } from './dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { UploadedFile } from 'src/common/types';
 import { ExpiringInsuranceDto } from './dto/expiring-insurance.dto';
@@ -29,27 +29,43 @@ export class DocumentsService {
     }
   }
 
-  async upload(
-    file: UploadedFile,
-    paymentId?: string,
-    dealId?: string,
-    type: DocumentType = 'OTHER',
-  ) {
-    if (!paymentId && !dealId) {
-      throw new BadRequestException('Необходимо указать paymentId или dealId');
+  private getAbsolutePath(storagePath: string): string {
+    return path.join(process.cwd(), storagePath);
+  }
+
+  async upload(file: UploadedFile, dto: UploadDocumentDto) {
+    if (
+      !dto.carId &&
+      !dto.dealId &&
+      !dto.paymentId &&
+      !dto.clientId &&
+      !dto.investorId
+    ) {
+      throw new BadRequestException(
+        'Документ должен быть привязан хотя бы к одной сущности (carId, dealId, paymentId, clientId или investorId)',
+      );
     }
 
-    if (paymentId) {
+    if (dto.carId) {
+      const car = await this.prisma.car.findUnique({
+        where: { id: dto.carId },
+      });
+      if (!car) throw new NotFoundException('Машина не найдена');
+    }
+
+    if (dto.paymentId) {
       const payment = await this.prisma.payment.findUnique({
-        where: { id: paymentId },
+        where: { id: dto.paymentId },
       });
       if (!payment) {
         throw new NotFoundException('Платеж не найден');
       }
     }
 
-    if (dealId) {
-      const deal = await this.prisma.deal.findUnique({ where: { id: dealId } });
+    if (dto.dealId) {
+      const deal = await this.prisma.deal.findUnique({
+        where: { id: dto.dealId },
+      });
       if (!deal) {
         throw new NotFoundException('Сделка не найдена');
       }
@@ -57,9 +73,11 @@ export class DocumentsService {
 
     const ext = path.extname(file.originalname);
     const uniqueName = `${uuidv4()}${ext}`;
-    const storagePath = path.join(this.uploadDir, uniqueName);
 
-    await fs.writeFile(storagePath, file.buffer);
+    const absolutePath = path.join(this.uploadDir, uniqueName);
+    const relativeStoragePath = `/uploads/${uniqueName}`;
+
+    await fs.writeFile(absolutePath, file.buffer);
 
     const document = await this.prisma.document.create({
       data: {
@@ -67,28 +85,20 @@ export class DocumentsService {
         originalName: file.originalname,
         mimeType: file.mimetype,
         size: file.size,
-        storagePath,
-        type,
-        paymentId: paymentId || null,
-        dealId: dealId || null,
+        storagePath: relativeStoragePath,
+        type: dto.type,
+        carId: dto.carId || null,
+        clientId: dto.clientId || null,
+        investorId: dto.investorId || null,
+        dealId: dto.dealId || null,
+        paymentId: dto.paymentId || null,
+        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+        comments: dto.comments || null,
+        notes: dto.notes || [],
       },
       include: {
-        payment: {
-          select: {
-            id: true,
-            deal: {
-              select: {
-                contractNumber: true,
-              },
-            },
-          },
-        },
-        deal: {
-          select: {
-            id: true,
-            contractNumber: true,
-          },
-        },
+        car: { select: { id: true, make: true, model: true } },
+        deal: { select: { id: true, contractNumber: true } },
       },
     });
 
@@ -96,22 +106,26 @@ export class DocumentsService {
   }
 
   async findAll(query: FindAllDocumentsDto) {
-    const { paymentId, dealId, type, page = 1, limit = 20 } = query;
+    const {
+      clientId,
+      investorId,
+      dealId,
+      paymentId,
+      carId,
+      type,
+      page = 1,
+      limit = 20,
+    } = query;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.DocumentWhereInput = {};
-
-    if (paymentId) {
-      where.paymentId = paymentId;
-    }
-
-    if (dealId) {
-      where.dealId = dealId;
-    }
-
-    if (type) {
-      where.type = type;
-    }
+    const where: Prisma.DocumentWhereInput = {
+      ...(clientId && { clientId }),
+      ...(investorId && { investorId }),
+      ...(dealId && { dealId }),
+      ...(paymentId && { paymentId }),
+      ...(carId && { carId }),
+      ...(type && { type }),
+    };
 
     const [documents, total] = await Promise.all([
       this.prisma.document.findMany({
@@ -120,6 +134,15 @@ export class DocumentsService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
+          car: {
+            select: {
+              id: true,
+              make: true,
+              model: true,
+              licensePlate: true,
+              vin: true,
+            },
+          },
           payment: {
             select: {
               id: true,
@@ -154,6 +177,15 @@ export class DocumentsService {
     const document = await this.prisma.document.findUnique({
       where: { id },
       include: {
+        car: {
+          select: {
+            id: true,
+            make: true,
+            model: true,
+            licensePlate: true,
+            vin: true,
+          },
+        },
         payment: {
           select: {
             id: true,
@@ -190,7 +222,8 @@ export class DocumentsService {
     }
 
     try {
-      const fileBuffer = await fs.readFile(document.storagePath);
+      const absolutePath = this.getAbsolutePath(document.storagePath);
+      const fileBuffer = await fs.readFile(absolutePath);
       return { fileBuffer, document };
     } catch {
       throw new NotFoundException('Файл не найден на диске');
@@ -207,9 +240,10 @@ export class DocumentsService {
     }
 
     try {
-      await fs.unlink(document.storagePath);
+      const absolutePath = this.getAbsolutePath(document.storagePath);
+      await fs.unlink(absolutePath);
     } catch {
-      // ...
+      //
     }
 
     await this.prisma.document.delete({ where: { id } });

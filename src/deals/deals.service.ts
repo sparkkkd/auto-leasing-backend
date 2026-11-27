@@ -184,8 +184,15 @@ export class DealsService {
       throw new NotFoundException('Машина не найдена');
     }
 
-    if (car.deals) {
-      throw new ConflictException('Машина уже участвует в другой сделке');
+    const existingActiveDeal = await this.prisma.deal.findFirst({
+      where: {
+        carId: createDealDto.carId,
+        status: DealStatus.ACTIVE,
+      },
+    });
+
+    if (existingActiveDeal) {
+      throw new ConflictException('Эта машина уже участвует в активной сделке');
     }
 
     const existingDeal = await this.prisma.deal.findUnique({

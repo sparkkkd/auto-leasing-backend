@@ -5,16 +5,27 @@ import { DocumentType } from '@prisma/client';
 export class FindAllDocumentsDto {
   @IsOptional()
   @IsString()
-  paymentId?: string;
+  clientId?: string;
+
+  @IsOptional()
+  @IsString()
+  investorId?: string;
 
   @IsOptional()
   @IsString()
   dealId?: string;
 
   @IsOptional()
+  @IsString()
+  paymentId?: string;
+
+  @IsOptional()
+  @IsString()
+  carId?: string;
+
+  @IsOptional()
   @IsEnum(DocumentType, {
-    message:
-      'Тип должен быть CLIENT_DOCUMENT, INVESTOR_DOCUMENT, CONTRACT_SCAN, PAYMENT_RECEIPT или OTHER',
+    message: 'Некорректный тип документа',
   })
   type?: DocumentType;
 
